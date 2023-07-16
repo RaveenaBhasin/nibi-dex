@@ -1,6 +1,7 @@
 [package]
 name = "nibiru-hack"
 version = "0.1.0"
+authors = ["Mehul0011 <imehul24@gmail.com>"]
 edition = "2021"
 
 exclude = [
