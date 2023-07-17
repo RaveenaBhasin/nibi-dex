@@ -1,5 +1,4 @@
-use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::Addr;
+use cosmwasm_schema::{cw_serde};
 use pair::{msg::TokenInfo, state::PairInfo};
 
 #[cw_serde]
