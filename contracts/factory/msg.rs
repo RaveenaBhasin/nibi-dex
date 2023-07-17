@@ -1,27 +1,34 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
+use cosmwasm_std::Addr;
+use pair::{msg::TokenInfo, state::PairInfo};
 
 #[cw_serde]
 pub struct InstantiateMsg {
-    pair_code_id: u64,
-    
+    pub pair_code_id: u64,
+    pub token_code_id: u64
 }
 
 #[cw_serde]
 pub enum ExecuteMsg {
-    Increment {},
-    Reset { count: i32 },
+    /// CreatePair instantiates pair contract
+    CreateNewPair {
+        /// Asset infos
+        asset_infos: [TokenInfo; 2],
+    },
 }
 
 #[cw_serde]
-#[derive(QueryResponses)]
 pub enum QueryMsg {
-    // GetCount returns the current count as a json-encoded number
-    #[returns(GetCountResponse)]
-    GetCount {},
+    Pair {
+        asset_infos: [TokenInfo; 2],
+    },
 }
 
 // We define a custom struct for each query response
+
+
+// We define a custom struct for each query response
 #[cw_serde]
-pub struct GetCountResponse {
-    pub count: i32,
+pub struct PairsResponse {
+    pub pairs: Vec<PairInfo>,
 }

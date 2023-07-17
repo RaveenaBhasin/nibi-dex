@@ -388,6 +388,7 @@ dependencies = [
  "cw-storage-plus",
  "cw2",
  "cw20",
+ "pair",
  "schemars",
  "serde",
  "thiserror",
