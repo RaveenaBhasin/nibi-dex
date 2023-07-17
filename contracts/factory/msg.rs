@@ -1,4 +1,4 @@
-use cosmwasm_schema::{cw_serde};
+use cosmwasm_schema::cw_serde;
 use pair::{msg::TokenInfo, state::PairInfo};
 
 #[cw_serde]
@@ -22,9 +22,6 @@ pub enum QueryMsg {
         asset_infos: [TokenInfo; 2],
     },
 }
-
-// We define a custom struct for each query response
-
 
 // We define a custom struct for each query response
 #[cw_serde]

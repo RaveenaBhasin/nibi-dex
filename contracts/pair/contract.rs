@@ -18,7 +18,6 @@ pub fn instantiate(
     let pair_info: PairInfo = PairInfo {
         assets: msg.token_info,
         lp_token_decimal: msg.lp_token_decimal,
-        lp_token_addr: msg.lp_token_addr,
     };
     PAIR_INFO.save(deps.storage, &pair_info)?;
     Ok(Response::new())

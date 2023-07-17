@@ -4,10 +4,19 @@ use cosmwasm_std::Addr;
 #[cw_serde]
 pub enum TokenInfo {
     CW20Token {
-        contract_addr : String,
+        contract_addr : Addr,
     },
     NativeToken {
         denom: String,
+    }
+}
+
+impl TokenInfo {
+    pub fn get_as_bytes(&self) -> &[u8]  {
+        match self {
+            TokenInfo::CW20Token { contract_addr } => contract_addr.as_bytes(),
+            TokenInfo::NativeToken { denom } => denom.as_bytes()
+        }
     }
 }
 
@@ -15,7 +24,6 @@ pub enum TokenInfo {
 pub struct InstantiateMsg {
     pub token_info: [TokenInfo; 2],
     pub lp_token_decimal: u8,
-    pub lp_token_addr: Addr
 }
 
 #[cw_serde]
