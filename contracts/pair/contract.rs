@@ -2,8 +2,7 @@ use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::state::{PairInfo, PAIR_INFO};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
-use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
-
+use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, StdError};
 // version info for migration info
 const _CONTRACT_NAME: &str = "crates.io:nibiru-hack";
 const _CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -20,6 +19,12 @@ pub fn instantiate(
         lp_token_decimal: msg.lp_token_decimal,
     };
     PAIR_INFO.save(deps.storage, &pair_info)?;
+    cw20_base::contract::instantiate(
+        deps,
+        _env,
+        _info,
+        msg.cw20_instantiate,
+    ).unwrap();
     Ok(Response::new())
 }
 
@@ -44,8 +49,15 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
             assets,
             min_liquidity_amt,
         } => execute::add_liquidity(deps, env, info, assets, min_liquidity_amt),
-        ExecuteMsg::RemoveLiquidity { lp_token } => {
-            execute::withdraw_liquidity(deps, env, info, lp_token)
+        ExecuteMsg::RemoveLiquidity { lp_token } => 
+            execute::withdraw_liquidity(deps, env, info, lp_token),
+        ExecuteMsg::TokenExecute (token_execute_msg) => {
+            match cw20_base::contract::execute(deps, env, info, token_execute_msg) {
+                Ok(res) => Ok(res),
+                Err(err) => {
+                    Err(StdError::generic_err(format!("cw20_base::contract::execute error: {}", err)))
+                }
+            }
         }
     }
 }
@@ -62,7 +74,7 @@ pub mod execute {
         _to_token: TokenInfo,
         _amount_in: u64,
         _min_amount_out: u64,
-    ) -> StdResult<Response> {
+    ) -> StdResult       <Response> {
         Ok(Response::new())
     }
 

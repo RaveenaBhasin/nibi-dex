@@ -70,6 +70,14 @@ pub mod execute {
             msg: to_binary(&InstantiatePairMsg {
                 token_info: asset_infos,
                 lp_token_decimal:  18u8,
+                cw20_instantiate: cw20_base::msg::InstantiateMsg {
+                    name: "pair token".to_string(),
+                    symbol: "pair".to_string(),
+                    decimals: 18u8,
+                    initial_balances: vec![],
+                    mint: None,
+                    marketing: None,
+                },
             })?,
         });
 

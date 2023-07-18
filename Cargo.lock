@@ -290,6 +290,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "cw20-base"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0b3ad456059901a36cfa68b596d85d579c3df2b797dae9950dc34c27e14e995f"
+dependencies = [
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cw-storage-plus",
+ "cw-utils",
+ "cw2",
+ "cw20",
+ "schemars",
+ "semver",
+ "serde",
+ "thiserror",
+]
+
+[[package]]
 name = "der"
 version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -400,7 +418,7 @@ dependencies = [
  "cw-storage-plus",
  "cw0",
  "cw2",
- "cw20",
+ "cw20-base",
  "pair",
  "schemars",
  "serde",
@@ -535,6 +553,7 @@ dependencies = [
  "cw-storage-plus",
  "cw2",
  "cw20",
+ "cw20-base",
  "schemars",
  "serde",
  "thiserror",
