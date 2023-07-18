@@ -1,5 +1,5 @@
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::Addr;
+use cosmwasm_std::{Addr, Uint128};
 use cw20_base::msg::InstantiateMsg as Cw20InstantiateMsg;
 use cw20_base::msg::ExecuteMsg as Cw20ExecuteMsg;
 
@@ -32,7 +32,7 @@ pub struct InstantiateMsg {
 #[cw_serde]
 pub struct Token {
     pub info: TokenInfo,
-    pub amount: u64,
+    pub amount: Uint128,
 }
 
 #[cw_serde]
@@ -40,12 +40,12 @@ pub enum ExecuteMsg {
     SwapAsset {
         from_token: TokenInfo,
         to_token: TokenInfo,
-        amount_in: u64,
-        min_amount_out: u64,
+        amount_in: u128,
+        min_amount_out: u128,
     },
     AddLiquidity{
         assets: [Token; 2],
-        min_liquidity_amt : u64,
+        min_liquidity_amt : u128,
     },
     RemoveLiquidity {
         lp_token: Token,
