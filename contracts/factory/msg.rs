@@ -1,5 +1,5 @@
 use cosmwasm_schema::cw_serde;
-use pair::{msg::TokenInfo, state::PairInfo};
+use packages::pair::TokenInfo;
 
 #[cw_serde]
 pub struct InstantiateMsg {
@@ -24,7 +24,7 @@ pub enum QueryMsg {
 }
 
 // We define a custom struct for each query response
-#[cw_serde]
-pub struct PairsResponse {
-    pub pairs: Vec<PairInfo>,
-}
+// #[cw_serde]
+// pub struct PairsResponse {
+//     pub pairs: Vec<PairInfo>,
+// }

@@ -1,5 +1,5 @@
 use cosmwasm_schema::cw_serde;
-use pair::msg::TokenInfo;
+use packages::pair::TokenInfo;
 use cw_storage_plus::{Map, Item};
 
 #[cw_serde]

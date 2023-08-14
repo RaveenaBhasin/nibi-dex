@@ -1,4 +1,4 @@
-use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
+use packages::pair::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::state::{PairInfo, PAIR_INFO};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;

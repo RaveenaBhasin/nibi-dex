@@ -3,7 +3,7 @@ use cosmwasm_std::entry_point;
 use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, StdError, CosmosMsg, WasmMsg, SubMsg, Reply, ReplyOn};
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::state::{FACTORY_CONFIG, FactoryConfig, PoolInfo, TEMP_POOL_INFO, TmpPoolInfo};
-use pair::msg::InstantiateMsg as InstantiatePairMsg;
+use packages::pair::InstantiateMsg as InstantiatePairMsg;
 use cw0::*;
 // version info for migration info
 // const CONTRACT_NAME: &str = "crates.io:nibiru-hack";
@@ -36,7 +36,7 @@ pub fn execute(
 }
 
 pub mod execute {
-    use pair::msg::TokenInfo;
+    use packages::pair::TokenInfo;
 
     use crate::state::{TmpPoolInfo, POOL_ID_TO_POOL_INFO};
 
@@ -94,7 +94,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 }
 
 pub mod query {
-    use pair::msg::TokenInfo;
+    use packages::pair::TokenInfo;
 
     use crate::state::POOL_ID_TO_POOL_INFO;
 

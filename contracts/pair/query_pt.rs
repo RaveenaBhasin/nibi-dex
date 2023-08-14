@@ -48,7 +48,7 @@ pub mod query {
         Ok(balance.amount.amount)
     }
 
-    pub fn query_all_balances(
+    pub fn _query_all_balances(
         querier: &QuerierWrapper,
         account_addr: Addr,
     ) -> StdResult<Vec<Coin>> {

@@ -12,7 +12,7 @@ pub mod execute {
     use cosmwasm_std::{CosmosMsg, Decimal256, Empty, WasmMsg, BankMsg, Coin};
 
     use super::*;
-    use crate::msg::{Token, TokenInfo};
+    use packages::pair::{Token, TokenInfo};
 
     pub fn swap(
         deps: DepsMut,

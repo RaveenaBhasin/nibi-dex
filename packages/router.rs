@@ -7,12 +7,6 @@ pub struct InstantiateMsg {
 }
 
 #[cw_serde]
-pub struct Token {
-    pub info: TokenInfo,
-    pub amount: u64,
-}
-
-#[cw_serde]
 pub enum ExecuteMsg {
     
 }
