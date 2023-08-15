@@ -1,7 +1,7 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, StdError, CosmosMsg, WasmMsg, SubMsg, Reply, ReplyOn};
-use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
+use packages::factory::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::state::{FACTORY_CONFIG, FactoryConfig, PoolInfo, TEMP_POOL_INFO, TmpPoolInfo};
 use packages::pair::InstantiateMsg as InstantiatePairMsg;
 use cw0::*;

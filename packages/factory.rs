@@ -1,5 +1,5 @@
 use cosmwasm_schema::cw_serde;
-use packages::pair::TokenInfo;
+use crate::pair::TokenInfo;
 
 #[cw_serde]
 pub struct InstantiateMsg {

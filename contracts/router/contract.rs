@@ -27,21 +27,19 @@ pub fn execute(_deps: DepsMut, _env: Env, _info: MessageInfo, _msg: ExecuteMsg) 
         Ok(Response::new())
 }
 
-pub mod execute {
-    
-}
-
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
-        QueryMsg::PoolInfo {} => to_binary(&query::pool_info(deps)?),
+        QueryMsg::GetFactoryAddr {  } => to_binary(&query::get_factory_addr(deps)?),
     }
 }
 
 pub mod query {
+    
     use super::*;
 
-    pub fn pool_info(_deps: Deps) -> StdResult<Response> {
-        Ok(Response::new())
+    pub fn get_factory_addr(_deps: Deps) -> StdResult<Binary> {
+        let config = CONFIG.load(_deps.storage)?;
+        to_binary(&config)
     }
 }

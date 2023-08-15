@@ -68,6 +68,6 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
-        QueryMsg::PoolInfo {} => to_binary(&query::pool_info(deps)?),
+        QueryMsg::PoolInfo {} => to_binary(&query::query_pair_info(deps)?),
     }
 }

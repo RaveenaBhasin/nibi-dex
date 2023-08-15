@@ -1,5 +1,5 @@
 use crate::state::{PairInfo, PAIR_INFO};
-use cosmwasm_std::{to_binary, Deps, Response, StdResult};
+use cosmwasm_std::{to_binary, Deps, StdResult};
 // version info for migration info
 const _CONTRACT_NAME: &str = "crates.io:nibiru-hack";
 const _CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -12,11 +12,6 @@ pub mod query {
     };
     use cw20::{Cw20QueryMsg, TokenInfoResponse};
 
-    pub fn pool_info(_deps: Deps) -> StdResult<Response> {
-        Ok(Response::new())
-    }
-
-    #[allow(dead_code)]
     pub fn query_pair_info(deps: Deps) -> StdResult<PairInfo> {
         let pair_info: PairInfo = PAIR_INFO.load(deps.storage).unwrap();
         Ok(pair_info)
