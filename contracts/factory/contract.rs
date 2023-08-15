@@ -40,6 +40,7 @@ pub mod execute {
 
     use crate::state::{TmpPoolInfo, POOL_ID_TO_POOL_INFO};
 
+    // use crate::console;
     use super::*;
     pub fn create_pair(
         deps: DepsMut,
@@ -51,6 +52,8 @@ pub mod execute {
         
         let mut asset_in_bytes = asset_infos.iter().map(|info| info.get_as_bytes()).collect::<Vec<&[u8]>>();
         asset_in_bytes.sort();
+
+        // console.log("hello id", asset_in_bytes);
         
         let pair_id =  asset_in_bytes.concat();
         if let Ok(Some(_)) = POOL_ID_TO_POOL_INFO.may_load(deps.storage, &pair_id) {

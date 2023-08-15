@@ -43,3 +43,4 @@ pub mod query {
         to_binary(&config)
     }
 }
+
