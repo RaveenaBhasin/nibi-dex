@@ -1,0 +1,36 @@
+[
+    {
+        "events": [
+            {
+                "type": "message",
+                "attributes": [
+                    {
+                        "key": "action",
+                        "value": "/cosmwasm.wasm.v1.MsgStoreCode"
+                    },
+                    {
+                        "key": "module",
+                        "value": "wasm"
+                    },
+                    {
+                        "key": "sender",
+                        "value": "nibi17cu3tjp5alp2c3umzhamygeyj2rkv4kshq6l9n"
+                    }
+                ]
+            },
+            {
+                "type": "store_code",
+                "attributes": [
+                    {
+                        "key": "code_checksum",
+                        "value": "466a613f09ff8a89ae6ce5c96c2d447affc02bfc0ed7eff8a4442006f513cfce"
+                    },
+                    {
+                        "key": "code_id",
+                        "value": "31504"
+                    }
+                ]
+            }
+        ]
+    }
+]

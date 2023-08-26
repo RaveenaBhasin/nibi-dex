@@ -4,7 +4,6 @@ use crate::pair::TokenInfo;
 #[cw_serde]
 pub struct InstantiateMsg {
     pub pair_code_id: u64,
-    pub token_code_id: u64
 }
 
 #[cw_serde]
