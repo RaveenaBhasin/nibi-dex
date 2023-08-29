@@ -17,3 +17,8 @@ Contract Address : nibi1hk4kcllz9lsd5haldt3pkzmwer7psfrn6lj4kpular6d3uh0yr4sevft
 
 Code ID : 31546<br/>
 Contract Address : nibi1uajaqg4nmefdmh9apcuxpgztz9xargdnq87kla0eh8ha85a5mlssq2h2kr
+
+• CW20 Mock Token
+
+Token A Address : nibi1fs882tudg4pegayj5fpess4mkupa77tx9x4chndwpezqkjegzhfsqlnkew<br/>
+Token B Address : nibi1xddyc03asynlf74tkfuhqs0t4qtljv7md5rawd6dk7nm2s9teckqphgjfn
