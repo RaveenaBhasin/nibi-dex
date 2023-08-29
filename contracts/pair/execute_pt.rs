@@ -74,7 +74,7 @@ pub mod execute {
                 }],
             }),
         };
-
+        
         Ok(res.add_message(token_transfer))
     }
 
@@ -123,9 +123,10 @@ pub mod execute {
     ) -> StdResult<Response> {
         // check if the pair exists
         let pair_info: PairInfo = PAIR_INFO.load(deps.storage).unwrap();
-        if (assets[0].info == pair_info.assets[0] && assets[1].info == pair_info.assets[1])
-            || (assets[0].info == pair_info.assets[1] && assets[1].info == pair_info.assets[0])
-        {
+        if !(
+                (assets[0].info == pair_info.assets[0] && assets[1].info == pair_info.assets[1])
+                || (assets[0].info == pair_info.assets[1] && assets[1].info == pair_info.assets[0])
+            ){
             return Err(StdError::generic_err("Pair does not exist"));
         }
 
