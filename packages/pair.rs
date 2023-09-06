@@ -45,7 +45,7 @@ pub enum ExecuteMsg {
     },
     AddLiquidity{
         assets: [Token; 2],
-        min_liquidity_amt : u128,
+        min_liquidity_amt : Uint128,
     },
     RemoveLiquidity {
         lp_token: Token,

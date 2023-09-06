@@ -9,7 +9,7 @@ use crate::query_pt::query;
 
 pub mod execute {
 
-    use cosmwasm_std::{CosmosMsg, Decimal256, Empty, WasmMsg, BankMsg, Coin};
+    use cosmwasm_std::{CosmosMsg, Decimal256, Empty, WasmMsg, BankMsg, Coin, Uint128};
 
     use super::*;
     use packages::pair::{Token, TokenInfo};
@@ -119,7 +119,7 @@ pub mod execute {
         env: Env,
         info: MessageInfo,
         assets: [Token; 2],
-        _min_liquidity: u128,
+        min_liquidity: Uint128
     ) -> StdResult<Response> {
         // check if the pair exists
         let pair_info: PairInfo = PAIR_INFO.load(deps.storage).unwrap();
@@ -178,9 +178,10 @@ pub mod execute {
             asset1_value.multiply_ratio(total_supply, token_balances[1]),
         );
 
-        // if liquidity_minted < min_liquidity {
-        //     return Err(StdError::generic_err("Insufficient liquidity minted"));
-        // }
+        if liquidity_minted < min_liquidity {
+            return Err(StdError::generic_err("Insufficient liquidity minted"));
+        }
+        
         // mint the lp token, to the sender
         let mint_liquidity: CosmosMsg<Empty> = CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: this_address.to_string().clone(),
