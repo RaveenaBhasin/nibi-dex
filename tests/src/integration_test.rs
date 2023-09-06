@@ -27,8 +27,8 @@ fn factory_contract() -> Box<dyn Contract<Empty>> {
         factory::contract::execute,
         factory::contract::instantiate,
         factory::contract::query,
-    );
-    // .with_reply(factory::contract::reply);
+    )
+    .with_reply(factory::contract::reply);
     Box::new(contract)
 }
 
@@ -73,7 +73,7 @@ fn integration_test() {
         pair_code_id, 
         Addr::unchecked("Sender"), 
         &PairInstantiate {
-            token_info: [token_info_1, token_info_2],
+            token_info: [token_info_1.clone(), token_info_2.clone()],
             lp_token_decimal: 8u8,
             cw20_instantiate: Cw20InstantiateMsg {
                 name: "CW20 Token".to_string(),      
@@ -117,7 +117,7 @@ fn integration_test() {
         router_code_id, 
         Addr::unchecked("Sender"), 
         &RouterInstantiate{
-            factory_addr: factory_contract_addr,
+            factory_addr: factory_contract_addr.clone(),
         }, 
         &[], 
         "Instantiate Router", 
@@ -126,5 +126,15 @@ fn integration_test() {
 
     println!("Router contract addr: {}", router_contract_addr);
 
+    let create_pair_res = router.execute_contract(
+        Addr::unchecked("Sender"), 
+        factory_contract_addr.clone(), 
+        &FactoryExecuteMsg::CreateNewPair { 
+            asset_infos: [token_info_1, token_info_2], 
+        }, 
+        &[],
+    ).unwrap();
+
+    println!("Create Pair Response: {:?}", create_pair_res);
 }
 
