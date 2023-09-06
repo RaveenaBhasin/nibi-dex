@@ -2,7 +2,7 @@ use packages::pair::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::state::{PairInfo, PAIR_INFO};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
-use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, StdError};
+use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, StdError, Reply};
 // version info for migration info
 const _CONTRACT_NAME: &str = "crates.io:nibiru-hack";
 const _CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -12,7 +12,7 @@ use crate::query_pt::query as query;
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     _info: MessageInfo,
     msg: InstantiateMsg,
 ) -> StdResult<Response> {
@@ -21,7 +21,7 @@ pub fn instantiate(
         lp_token_decimal: msg.lp_token_decimal,
     };
     PAIR_INFO.save(deps.storage, &pair_info)?;
-    cw20_base::contract::instantiate(deps, _env, _info, msg.cw20_instantiate).unwrap();
+    cw20_base::contract::instantiate(deps, env, _info, msg.cw20_instantiate).unwrap();
     Ok(Response::new())
 }
 
@@ -66,8 +66,43 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
 
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
+pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::PoolInfo {} => to_binary(&query::query_pair_info(deps)?),
+        QueryMsg::TokenQuery(token_query_msg) => {
+            match cw20_base::contract::query(deps, env, token_query_msg) {
+                Ok(res) => Ok(res), 
+                Err(err) => Err(StdError::generic_err(format!(
+                    "cw20_base::contract::query error: {}",
+                    err
+                )))
+            }
+        }
     }
 }
+
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn reply(
+    deps: DepsMut, 
+    env: Env, 
+    msg: Reply
+) -> StdResult<Response> {
+    match msg.id {
+        0u64 => reply::instantiate_reply(deps, env, msg),
+        _ => Ok(Response::default()),
+    }
+}
+
+pub mod reply {
+    use super::*;
+
+    pub fn instantiate_reply(
+        _deps: DepsMut,
+        _env: Env, 
+        _msg: Reply
+    ) ->  StdResult<Response> {
+        
+        Ok(Response::new())
+    }
+}
+    

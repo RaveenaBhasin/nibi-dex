@@ -2,6 +2,7 @@ use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, Uint128};
 use cw20_base::msg::InstantiateMsg as Cw20InstantiateMsg;
 use cw20_base::msg::ExecuteMsg as Cw20ExecuteMsg;
+use cw20_base::msg::QueryMsg as CW20QueryMsg;
 
 #[cw_serde]
 pub enum TokenInfo {
@@ -45,7 +46,7 @@ pub enum ExecuteMsg {
     },
     AddLiquidity{
         assets: [Token; 2],
-        min_liquidity_amt : u128,
+        min_liquidity_amt : Uint128,
     },
     RemoveLiquidity {
         lp_token: Token,
@@ -57,5 +58,6 @@ pub enum ExecuteMsg {
 
 #[cw_serde]
 pub enum QueryMsg {
-    PoolInfo{}
+    PoolInfo{}, 
+    TokenQuery(CW20QueryMsg)
 }
