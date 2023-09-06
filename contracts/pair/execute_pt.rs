@@ -2,6 +2,7 @@ use crate::state::{PairInfo, PAIR_INFO};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::{to_binary, DepsMut, Env, MessageInfo, Response, StdError, StdResult};
 use cw20::Cw20ExecuteMsg;
+
 // version info for migration info
 const _CONTRACT_NAME: &str = "crates.io:nibiru-hack";
 const _CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -9,7 +10,7 @@ use crate::query_pt::query;
 
 pub mod execute {
 
-    use cosmwasm_std::{CosmosMsg, Decimal256, Empty, WasmMsg, BankMsg, Coin, Uint128};
+    use cosmwasm_std::{CosmosMsg, Decimal256, Empty, WasmMsg, BankMsg, Coin, Uint128, Deps};
 
     use super::*;
     use packages::pair::{Token, TokenInfo};
@@ -173,6 +174,7 @@ pub mod execute {
         let total_supply = query::query_token_info(&deps.querier, env.contract.address)
             .unwrap()
             .total_supply;
+        // let total_supply: cw20::TokenInfoResponse = cw20_base::contract::query(deps, env, cw20_base::msg::QueryMsg::TokenInfo {});
         let liquidity_minted = std::cmp::min(
             asset0_value.multiply_ratio(total_supply, token_balances[0]),
             asset1_value.multiply_ratio(total_supply, token_balances[1]),
