@@ -11,7 +11,7 @@ use crate::query_pt::query;
 pub mod execute {
 
     use cosmwasm_std::{CosmosMsg, Decimal256, Empty, WasmMsg, BankMsg, Coin, Uint128};
-    use cw20_base::state::TOKEN_INFO;
+    use cw20_base::{state::{TOKEN_INFO, BALANCES}, ContractError};
 
     use super::*;
     use packages::pair::{Token, TokenInfo};
@@ -115,6 +115,38 @@ pub mod execute {
         Ok(amount_out)
     }
 
+    pub fn execute_mint(
+        deps: DepsMut,
+        _env: Env,
+        _info: MessageInfo,
+        recipient: String,
+        amount: Uint128,
+    ) -> Result<Response, ContractError> {
+        let mut config = TOKEN_INFO
+        .load(deps.storage)?;
+        // update supply and enforce cap
+        config.total_supply += amount;
+        if let Some(limit) = config.get_cap() {
+            if config.total_supply > limit {
+                return Err(ContractError::CannotExceedCap {});
+            }
+        }
+        TOKEN_INFO.save(deps.storage, &config)?;
+    
+        // add amount to recipient balance
+        let rcpt_addr = deps.api.addr_validate(&recipient)?;
+        BALANCES.update(
+            deps.storage,
+            &rcpt_addr,
+            |balance: Option<Uint128>| -> StdResult<_> { Ok(balance.unwrap_or_default() + amount) },
+        )?;
+    
+        let res = Response::new()
+            .add_attribute("action", "mint")
+            .add_attribute("to", recipient)
+            .add_attribute("amount", amount);
+        Ok(res)
+    }
 
     pub fn add_liquidity(
         deps: DepsMut,
@@ -153,17 +185,16 @@ pub mod execute {
         }
 
         let mut token_balances = vec![];
-        let this_address = env.contract.address.clone();
         for (_, asset) in assets.iter().enumerate() {
             let token_bal = match &asset.info {
                 TokenInfo::CW20Token { contract_addr } => query::query_token_balance(
                     &deps.querier,
                     contract_addr.clone(),
-                    this_address.clone(),
+                    info.sender.clone()
                 )?,
                 TokenInfo::NativeToken { denom } => query::query_native_balance(
                     &deps.querier,
-                    this_address.clone(),
+                    info.sender.clone(),
                     denom.to_string(),
                 )?,
             };
@@ -175,10 +206,6 @@ pub mod execute {
 
         let asset0_value = assets[0].amount;
         let asset1_value = assets[1].amount;
-        // let total_supply = query::query_token_info(&deps.querier, env.contract.address)
-        //     .unwrap()
-        //     .total_supply;
-        // let total_supply: cw20::TokenInfoResponse = query_token_info(deps);
 
         let token_info = TOKEN_INFO.load(deps.storage)?;
         let res = cw20::TokenInfoResponse {
@@ -188,25 +215,24 @@ pub mod execute {
             total_supply: token_info.total_supply,
         };
 
-        let liquidity_minted = std::cmp::min(
-            asset0_value.multiply_ratio(res.total_supply, token_balances[0]),
-            asset1_value.multiply_ratio(res.total_supply, token_balances[1]),
-        );
+        let liquidity_minted: Uint128;
+        if res.total_supply == Uint128::from(0u128) {
+            liquidity_minted = std::cmp::min(asset0_value,asset1_value);
+        }
+        else {
+            liquidity_minted = std::cmp::min(
+                asset0_value.multiply_ratio(res.total_supply, token_balances[0]),
+                asset1_value.multiply_ratio(res.total_supply, token_balances[1]),
+            );
+        }
 
         if liquidity_minted < min_liquidity {
-            return Err(StdError::generic_err("Insufficient liquidity minted"));
+            return Err(StdError::generic_err(format!("Insufficient liquidity minted {:?}", liquidity_minted)));
         }
         
         // mint the lp token, to the sender
-        let mint_liquidity: CosmosMsg<Empty> = CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: this_address.to_string().clone(),
-            msg: to_binary(&Cw20ExecuteMsg::Mint {
-                recipient: info.sender.to_string(),
-                amount: liquidity_minted,
-            })?,
-            funds: vec![],
-        });
-        messages.push(mint_liquidity.clone());
+        execute_mint(deps, env, info.clone(), info.sender.to_string().clone(), liquidity_minted).unwrap();
+
         // store the lp token balance in the state
         return Ok(Response::new().add_messages(messages).add_attributes(vec![
             ("action", "add_liquidity"),
@@ -221,14 +247,18 @@ pub mod execute {
         info: MessageInfo,
         lp_token: Token,
     ) -> StdResult<Response> {
-        let this_address = env.contract.address;
+        let this_address = env.contract.address.clone();
 
         let pair_info: PairInfo = PAIR_INFO.load(deps.storage).unwrap();
-        let total_supply = query::query_token_info(&deps.querier, this_address.clone())
-            .unwrap()
-            .total_supply;
+        let token_info = TOKEN_INFO.load(deps.storage)?;
+        let res = cw20::TokenInfoResponse {
+            name: token_info.name,
+            symbol: token_info.symbol,
+            decimals: token_info.decimals,
+            total_supply: token_info.total_supply,
+        };
 
-        let _ratio = Decimal256::from_ratio(lp_token.amount, total_supply);
+        let _ratio = Decimal256::from_ratio(lp_token.amount, res.total_supply);
 
         let mut token_balances = vec![];
         for (_, asset) in pair_info.assets.iter().enumerate() {
@@ -248,29 +278,25 @@ pub mod execute {
         }
 
         let assets_returned = [ 
-            lp_token.amount.multiply_ratio(token_balances[0], total_supply),
-            lp_token.amount.multiply_ratio(token_balances[1], total_supply),
+            lp_token.amount.multiply_ratio(token_balances[0], res.total_supply),
+            lp_token.amount.multiply_ratio(token_balances[1], res.total_supply),
         ];
 
-        let burn_liquidity: CosmosMsg<Empty> = CosmosMsg::Wasm(WasmMsg::Execute { 
-            contract_addr: this_address.clone().to_string(), 
-            msg: to_binary(&Cw20ExecuteMsg::Burn { 
-                amount: lp_token.amount,
-            })?, 
-            funds: vec![],
-        });
-
+        cw20_base::contract::execute_burn(
+            deps, 
+            env, 
+            info.clone(), 
+            lp_token.amount
+        ).unwrap();
 
         let mut messages = vec![];
-        messages.push(burn_liquidity);
         for (i, asset) in pair_info.assets.iter().enumerate() {
             match &asset {
                 TokenInfo::CW20Token { contract_addr } => {
                     let cw20_asset_transfer: CosmosMsg<Empty> = CosmosMsg::Wasm(WasmMsg::Execute {
                         contract_addr: contract_addr.to_string(),
-                        msg: to_binary(&Cw20ExecuteMsg::TransferFrom {
-                            owner: info.sender.to_string(),
-                            recipient: this_address.to_string().clone(),
+                        msg: to_binary(&Cw20ExecuteMsg::Transfer {
+                            recipient: info.sender.clone().to_string(),
                             amount: assets_returned[i],
                         })?,
                         funds: vec![],

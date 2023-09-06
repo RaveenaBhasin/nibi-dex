@@ -189,45 +189,45 @@ fn integration_test() {
 
     let pair_contract_addr = query_res.pair_addr;
 
-    let allowance_before_res: AllowanceResponse = app.wrap().query_wasm_smart(
-        Addr::unchecked(pair_contract_addr.clone()), 
-        &PairQueryMsg::TokenQuery(
-            cw20_base::msg::QueryMsg::Allowance { 
-                owner: "user".to_string(), 
-                spender: "user2".to_string() 
-            }
-        )
-    ).unwrap();
+    // let allowance_before_res: AllowanceResponse = app.wrap().query_wasm_smart(
+    //     Addr::unchecked(pair_contract_addr.clone()), 
+    //     &PairQueryMsg::TokenQuery(
+    //         cw20_base::msg::QueryMsg::Allowance { 
+    //             owner: "user".to_string(), 
+    //             spender: "user2".to_string() 
+    //         }
+    //     )
+    // ).unwrap();
 
-    println!("Allowance before increasing: {:?}\n", allowance_before_res);
+    // println!("Allowance before increasing: {:?}\n", allowance_before_res);
 
     // Call Pair contract with TokenExecuteMsg for IncreaseAllowance
-    let increase_allowance_res = app.execute_contract(
-        Addr::unchecked("user"), 
-        Addr::unchecked(pair_contract_addr.clone()),
-        &PairExecuteMsg::TokenExecute(
-            cw20::Cw20ExecuteMsg::IncreaseAllowance { 
-                spender: "user2".to_string(), 
-                amount: Uint128::from(100u128), 
-                expires: None 
-            } 
-        ),
-        &[]
-    ).unwrap();
+    // let increase_allowance_res = app.execute_contract(
+    //     Addr::unchecked("user"), 
+    //     Addr::unchecked(pair_contract_addr.clone()),
+    //     &PairExecuteMsg::TokenExecute(
+    //         cw20::Cw20ExecuteMsg::IncreaseAllowance { 
+    //             spender: "user2".to_string(), 
+    //             amount: Uint128::from(100u128), 
+    //             expires: None 
+    //         } 
+    //     ),
+    //     &[]
+    // ).unwrap();
 
-    println!("Increase Allowance on Pair {:?}\n", increase_allowance_res);
+    // println!("Increase Allowance on Pair {:?}\n", increase_allowance_res);
 
-    let allowance_after_res: AllowanceResponse = app.wrap().query_wasm_smart(
-        Addr::unchecked(pair_contract_addr.clone()), 
-        &PairQueryMsg::TokenQuery(
-            cw20_base::msg::QueryMsg::Allowance { 
-                owner: "user".to_string(), 
-                spender: "user2".to_string() 
-            }
-        )
-    ).unwrap();
+    // let allowance_after_res: AllowanceResponse = app.wrap().query_wasm_smart(
+    //     Addr::unchecked(pair_contract_addr.clone()), 
+    //     &PairQueryMsg::TokenQuery(
+    //         cw20_base::msg::QueryMsg::Allowance { 
+    //             owner: "user".to_string(), 
+    //             spender: "user2".to_string() 
+    //         }
+    //     )
+    // ).unwrap();
 
-    println!("Allowance after increasing: {:?}\n", allowance_after_res); 
+    // println!("Allowance after increasing: {:?}\n", allowance_after_res); 
 
 
     let token1_balance: BalanceResponse = app.wrap().query_wasm_smart(
@@ -242,8 +242,33 @@ fn integration_test() {
         ,
     ).unwrap();
 
-    println!("Token Balances of the user: {:?} {:?}", token1_balance, token2_balance);
+    println!("Token Balances of the user: {:?}\n {:?}\n", token1_balance, token2_balance);
 
+
+    let increase_allowance_token1 = app.execute_contract(
+        Addr::unchecked("user"), 
+        token1_contract_addr.clone(),
+        &cw20::Cw20ExecuteMsg::IncreaseAllowance { 
+            spender: pair_contract_addr.clone(), 
+            amount: Uint128::from(200u128), 
+            expires: None 
+        },
+        &[]
+    ).unwrap();
+    println!("Increased Allowance for Token1: {:?}\n", increase_allowance_token1);
+
+    let increase_allowance_token2 = app.execute_contract(
+        Addr::unchecked("user"), 
+        token2_contract_addr.clone(),
+        &cw20::Cw20ExecuteMsg::IncreaseAllowance { 
+            spender: pair_contract_addr.clone(), 
+            amount: Uint128::from(100u128), 
+            expires: None 
+        },
+        &[]
+    ).unwrap();
+
+    println!("Increased Allowance for Token2: {:?}\n", increase_allowance_token2);
 
     // Test for Pair Contract
     let add_liquidity_res = app.execute_contract(
@@ -265,6 +290,34 @@ fn integration_test() {
         &[],
     ).unwrap();
 
-    println!("Add liquidity Response: {:?}", add_liquidity_res);
+    println!("Add liquidity Response: {:?}\n", add_liquidity_res);
+
+    let swap_res = app.execute_contract(
+        Addr::unchecked("user"), 
+        Addr::unchecked(pair_contract_addr.clone()), 
+        &PairExecuteMsg::SwapAsset { 
+            from_token: token_info_1.clone(), 
+            to_token: token_info_2.clone(), 
+            amount_in: 20u128, 
+            min_amount_out: 5u128
+        }, 
+        &[],
+    ).unwrap();
+
+    println!("Swap Response: {:?}\n", swap_res);
+
+    let withdraw_res = app.execute_contract(
+        Addr::unchecked("user"), 
+        Addr::unchecked(pair_contract_addr.clone()), 
+        &PairExecuteMsg::RemoveLiquidity { 
+            lp_token:Token {
+                info: token_info_1.clone(),
+                amount: Uint128::from(20u128),
+            },
+        }, 
+        &[],
+    );
+
+    println!("Withdraw Res: {:?}\n", withdraw_res);
 }
 

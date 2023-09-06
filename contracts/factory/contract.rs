@@ -3,8 +3,9 @@ use cosmwasm_std::entry_point;
 use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, StdError, CosmosMsg, WasmMsg, SubMsg, Reply, ReplyOn};
 use packages::factory::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::state::{FACTORY_CONFIG, FactoryConfig, PoolInfo, TEMP_POOL_INFO, TmpPoolInfo};
-use packages::pair::InstantiateMsg as InstantiatePairMsg;
+use packages::pair::{InstantiateMsg as InstantiatePairMsg, ExecuteMsg as ExecutePairMsg};
 use cw0::*;
+use cw20::{ MinterResponse, Cw20ExecuteMsg };
 // version info for migration info
 // const CONTRACT_NAME: &str = "crates.io:nibiru-hack";
 // const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -65,6 +66,11 @@ pub mod execute {
             assets: asset_infos.clone(),
         })?;
 
+        let minter_response = MinterResponse {
+            minter: env.contract.address.to_string().clone(),
+            cap: None
+        };
+        
         let instantiate_pair = CosmosMsg::Wasm(WasmMsg::Instantiate {
             code_id: factory_config.pair_code_id,
             funds: vec![],
@@ -77,15 +83,16 @@ pub mod execute {
                     name: "pair token".to_string(),
                     symbol: "pair".to_string(),
                     decimals: 18u8,
-                    initial_balances: vec![],
-                    mint: None,
+                    initial_balances: vec![], 
+                    mint: Some(minter_response),
                     marketing: None,
                 },
             })?,
         });
 
         Ok(Response::new()
-            .add_submessage(SubMsg {id: 0u64, msg: instantiate_pair, gas_limit: None, reply_on: ReplyOn::Success}))
+            .add_submessage(SubMsg {id: 1u64, msg: instantiate_pair, gas_limit: None, reply_on: ReplyOn::Success})
+        )
     }
 }
 
@@ -117,19 +124,21 @@ pub fn reply(
     msg: Reply
 ) -> StdResult<Response> {
     match msg.id {
-        0u64 => reply::instantiate_reply(deps, env, msg),
+        1u64 => reply::instantiate_reply(deps, env, msg),
         _ => Ok(Response::default()),
     }
 }
 
 pub mod reply {
+    use cosmwasm_std::Empty;
+
     use crate::state::POOL_ID_TO_POOL_INFO;
 
     use super::*;
 
     pub fn instantiate_reply(
         deps: DepsMut,
-       _env: Env, 
+        _env: Env, 
         msg: Reply
     ) ->  StdResult<Response> {
         let temp_pool_info: TmpPoolInfo = TEMP_POOL_INFO.load(deps.storage)?;
@@ -141,11 +150,22 @@ pub mod reply {
             deps.storage,
             &temp_pool_info.pool_id,
             &PoolInfo {
-                pair_addr: res.contract_address,
+                pair_addr: res.contract_address.clone(),
                 assets: temp_pool_info.assets,
             },
         )?;
-        Ok(Response::new())
+
+        let update_minter: CosmosMsg<Empty> = CosmosMsg::Wasm(WasmMsg::Execute { 
+            contract_addr: res.contract_address.clone(), 
+            msg: to_binary(&ExecutePairMsg::TokenExecute(
+                Cw20ExecuteMsg::UpdateMinter { 
+                    new_minter: Some(res.contract_address.clone()) 
+                }
+            ))?, 
+            funds: vec![],
+        });
+
+        Ok(Response::new().add_submessage(SubMsg { id: 2u64, msg: update_minter, gas_limit: None, reply_on: ReplyOn::Success }))
     }
 }
     
