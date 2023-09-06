@@ -1,9 +1,9 @@
 use cosmwasm_std::{Empty, Addr, Uint128};
-use cw20::Cw20Coin;
+use cw20::{Cw20Coin, AllowanceResponse, BalanceResponse};
 use cw_multi_test::{App, Contract, ContractWrapper, Executor};
-use cw20_base::msg::InstantiateMsg as Cw20InstantiateMsg;
+use cw20_base::msg::{InstantiateMsg as Cw20InstantiateMsg, QueryMsg as Cw20QueryMsg};
 use factory::state::PoolInfo;
-use packages::pair::{TokenInfo, InstantiateMsg as PairInstantiateMsg, ExecuteMsg as PairExecuteMsg, Token};
+use packages::pair::{TokenInfo, ExecuteMsg as PairExecuteMsg, Token, QueryMsg as PairQueryMsg};
 use packages::factory::{InstantiateMsg as FactoryInstantiate, ExecuteMsg as FactoryExecuteMsg, QueryMsg as FactoryQueryMsg};
 use packages::router::InstantiateMsg as RouterInstantiate;
 
@@ -139,36 +139,6 @@ fn integration_test() {
         contract_addr: token2_contract_addr.clone(),
     };
 
-    // let pair_contract_addr = app.instantiate_contract(
-    //     pair_code_id, 
-    //     Addr::unchecked("Sender"), 
-    //     &PairInstantiateMsg {
-    //         token_info: [token_info_1.clone(), token_info_2.clone()],
-    //         lp_token_decimal: 8u8,
-    //         cw20_instantiate: Cw20InstantiateMsg {
-    //             name: "CW20 Token".to_string(),      
-    //             symbol: "CWT".to_string(),            
-    //             decimals: 18u8,                        
-    //             initial_balances: vec![                
-    //                 Cw20Coin {
-    //                     address: token1_contract_addr.to_string(),
-    //                     amount: Uint128::from(1000000u128),
-    //                 },
-    //                 Cw20Coin {
-    //                     address: token2_contract_addr.to_string(),
-    //                     amount: Uint128::from(500000u128),
-    //                 },
-    //             ],
-    //             mint: None,
-    //             marketing: None,
-    //         },
-    //     }, 
-    //     &[], 
-    //     "Instantiate Factory ", 
-    //     None,
-    // ).unwrap();
-
-    // println!("Pair contract addr: {}", pair_contract_addr);
 
     let factory_contract_addr = app.instantiate_contract(
         factory_code_id, 
@@ -215,30 +185,86 @@ fn integration_test() {
         },
     ).unwrap();
 
-    println!("Query Pair Reponse: {:?}", query_res);
+    println!("Query Pair Reponse: {:?} {:?}\n", query_res, query_res.pair_addr);
 
-    //Test for Pair Contract
-    // let add_liquidity_res = app.execute_contract(
-    //     Addr::unchecked("user"),
-    //     pair_contract_addr.clone(), 
-    //     &PairExecuteMsg::AddLiquidity { 
-    //         assets: [
-    //             Token{
-    //                 info: token_info_1.clone(),
-    //                 amount: Uint128::from(100u128),
-    //             },
-    //             Token{
-    //                 info: token_info_2.clone(),
-    //                 amount: Uint128::from(100u128),
-    //             }
-    //         ], 
-    //         min_liquidity_amt: Uint128::from(123u128)
-    //     }, 
-    //     &[],
-    // ).unwrap();
+    let pair_contract_addr = query_res.pair_addr;
 
-    // println!("Add liquidity Response: {:?}", add_liquidity_res);
+    let allowance_before_res: AllowanceResponse = app.wrap().query_wasm_smart(
+        Addr::unchecked(pair_contract_addr.clone()), 
+        &PairQueryMsg::TokenQuery(
+            cw20_base::msg::QueryMsg::Allowance { 
+                owner: "user".to_string(), 
+                spender: "user2".to_string() 
+            }
+        )
+    ).unwrap();
+
+    println!("Allowance before increasing: {:?}\n", allowance_before_res);
+
+    // Call Pair contract with TokenExecuteMsg for IncreaseAllowance
+    let increase_allowance_res = app.execute_contract(
+        Addr::unchecked("user"), 
+        Addr::unchecked(pair_contract_addr.clone()),
+        &PairExecuteMsg::TokenExecute(
+            cw20::Cw20ExecuteMsg::IncreaseAllowance { 
+                spender: "user2".to_string(), 
+                amount: Uint128::from(100u128), 
+                expires: None 
+            } 
+        ),
+        &[]
+    ).unwrap();
+
+    println!("Increase Allowance on Pair {:?}\n", increase_allowance_res);
+
+    let allowance_after_res: AllowanceResponse = app.wrap().query_wasm_smart(
+        Addr::unchecked(pair_contract_addr.clone()), 
+        &PairQueryMsg::TokenQuery(
+            cw20_base::msg::QueryMsg::Allowance { 
+                owner: "user".to_string(), 
+                spender: "user2".to_string() 
+            }
+        )
+    ).unwrap();
+
+    println!("Allowance after increasing: {:?}\n", allowance_after_res); 
 
 
+    let token1_balance: BalanceResponse = app.wrap().query_wasm_smart(
+        token1_contract_addr.clone(), 
+        &Cw20QueryMsg::Balance { address: "user".to_string() }
+        ,
+    ).unwrap();
+
+    let token2_balance: BalanceResponse = app.wrap().query_wasm_smart(
+        token2_contract_addr.clone(), 
+        &Cw20QueryMsg::Balance { address: "user".to_string() }
+        ,
+    ).unwrap();
+
+    println!("Token Balances of the user: {:?} {:?}", token1_balance, token2_balance);
+
+
+    // Test for Pair Contract
+    let add_liquidity_res = app.execute_contract(
+        Addr::unchecked("user"),
+        Addr::unchecked(pair_contract_addr.clone()), 
+        &PairExecuteMsg::AddLiquidity { 
+            assets: [
+                Token{
+                    info: token_info_1.clone(),
+                    amount: Uint128::from(100u128),
+                },
+                Token{
+                    info: token_info_2.clone(),
+                    amount: Uint128::from(100u128),
+                }
+            ], 
+            min_liquidity_amt: Uint128::from(1u128)
+        }, 
+        &[],
+    ).unwrap();
+
+    println!("Add liquidity Response: {:?}", add_liquidity_res);
 }
 

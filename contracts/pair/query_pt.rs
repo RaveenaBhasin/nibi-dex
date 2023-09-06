@@ -18,6 +18,8 @@ pub mod query {
         Ok(pair_info)
     }
 
+    
+
 
     pub fn query_token_info(
         querier: &QuerierWrapper,

@@ -10,7 +10,8 @@ use crate::query_pt::query;
 
 pub mod execute {
 
-    use cosmwasm_std::{CosmosMsg, Decimal256, Empty, WasmMsg, BankMsg, Coin, Uint128, Deps};
+    use cosmwasm_std::{CosmosMsg, Decimal256, Empty, WasmMsg, BankMsg, Coin, Uint128};
+    use cw20_base::state::TOKEN_INFO;
 
     use super::*;
     use packages::pair::{Token, TokenInfo};
@@ -166,18 +167,30 @@ pub mod execute {
                     denom.to_string(),
                 )?,
             };
+            if token_bal == Uint128::from(0u128) {
+                return Err(StdError::generic_err(format!("Balance found zero {:?}", asset.info)));
+            }
             token_balances.push(token_bal);
         }
 
         let asset0_value = assets[0].amount;
         let asset1_value = assets[1].amount;
-        let total_supply = query::query_token_info(&deps.querier, env.contract.address)
-            .unwrap()
-            .total_supply;
-        // let total_supply: cw20::TokenInfoResponse = cw20_base::contract::query(deps, env, cw20_base::msg::QueryMsg::TokenInfo {});
+        // let total_supply = query::query_token_info(&deps.querier, env.contract.address)
+        //     .unwrap()
+        //     .total_supply;
+        // let total_supply: cw20::TokenInfoResponse = query_token_info(deps);
+
+        let token_info = TOKEN_INFO.load(deps.storage)?;
+        let res = cw20::TokenInfoResponse {
+            name: token_info.name,
+            symbol: token_info.symbol,
+            decimals: token_info.decimals,
+            total_supply: token_info.total_supply,
+        };
+
         let liquidity_minted = std::cmp::min(
-            asset0_value.multiply_ratio(total_supply, token_balances[0]),
-            asset1_value.multiply_ratio(total_supply, token_balances[1]),
+            asset0_value.multiply_ratio(res.total_supply, token_balances[0]),
+            asset1_value.multiply_ratio(res.total_supply, token_balances[1]),
         );
 
         if liquidity_minted < min_liquidity {
