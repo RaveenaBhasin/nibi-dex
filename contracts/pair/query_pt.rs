@@ -21,7 +21,7 @@ pub mod query {
     
 
 
-    pub fn query_token_info(
+    pub fn _query_token_info(
         querier: &QuerierWrapper,
         contract_addr: Addr,
     ) -> StdResult<TokenInfoResponse> {
