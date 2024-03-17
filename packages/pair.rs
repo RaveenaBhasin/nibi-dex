@@ -1,24 +1,21 @@
 use cosmwasm_schema::cw_serde;
+use cosmwasm_schema::QueryResponses;
 use cosmwasm_std::{Addr, Uint128};
-use cw20_base::msg::InstantiateMsg as Cw20InstantiateMsg;
 use cw20_base::msg::ExecuteMsg as Cw20ExecuteMsg;
+use cw20_base::msg::InstantiateMsg as Cw20InstantiateMsg;
 use cw20_base::msg::QueryMsg as CW20QueryMsg;
 
 #[cw_serde]
 pub enum TokenInfo {
-    CW20Token {
-        contract_addr : Addr,
-    },
-    NativeToken {
-        denom: String,
-    }
+    CW20Token { contract_addr: Addr },
+    NativeToken { denom: String },
 }
 
 impl TokenInfo {
-    pub fn get_as_bytes(&self) -> &[u8]  {
+    pub fn get_as_bytes(&self) -> &[u8] {
         match self {
             TokenInfo::CW20Token { contract_addr } => contract_addr.as_bytes(),
-            TokenInfo::NativeToken { denom } => denom.as_bytes()
+            TokenInfo::NativeToken { denom } => denom.as_bytes(),
         }
     }
 }
@@ -44,9 +41,9 @@ pub enum ExecuteMsg {
         amount_in: u128,
         min_amount_out: u128,
     },
-    AddLiquidity{
+    AddLiquidity {
         assets: [Token; 2],
-        min_liquidity_amt : Uint128,
+        min_liquidity_amt: Uint128,
     },
     RemoveLiquidity {
         lp_token: Token,
@@ -54,10 +51,18 @@ pub enum ExecuteMsg {
     TokenExecute(Cw20ExecuteMsg),
 }
 
-
+#[cw_serde]
+pub struct PairInfo {
+    pub assets: [TokenInfo; 2],
+    pub lp_token_decimal: u8,
+}
 
 #[cw_serde]
+#[derive(QueryResponses)]
 pub enum QueryMsg {
-    PoolInfo{}, 
-    TokenQuery(CW20QueryMsg)
+    #[returns(PairInfo)]
+    PoolInfo {},
+    #[returns(CW20QueryMsg)]
+    TokenQuery(CW20QueryMsg),
 }
+

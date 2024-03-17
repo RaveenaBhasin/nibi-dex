@@ -16,6 +16,10 @@ exclude = [
 crate-type = ["cdylib", "rlib"]
 path="lib.rs"
 
+[[bin]]
+name = "pair-schema"
+path = "bin/schema.rs"
+
 [features]
 # for more explicit tests, cargo test --features=backtraces
 backtraces = ["cosmwasm-std/backtraces"]
@@ -43,6 +47,6 @@ schemars = "0.8.12"
 serde = { version = "1.0.183", default-features = false, features = ["derive"] }
 thiserror = { version = "1.0.44" }
 
-[dev-dependencies]  
+[dev-dependencies]
 cw-multi-test = "0.16.5"
 

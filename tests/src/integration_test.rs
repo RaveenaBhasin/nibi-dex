@@ -2,9 +2,8 @@ use cosmwasm_std::{Addr, Empty, Uint128};
 use cw20::Cw20Coin;
 use cw20_base::msg::InstantiateMsg as Cw20InstantiateMsg;
 use cw_multi_test::{App, Contract, ContractWrapper, Executor};
-use factory::state::PoolInfo;
 use packages::factory::{
-    ExecuteMsg as FactoryExecuteMsg, InstantiateMsg as FactoryInstantiate,
+    ExecuteMsg as FactoryExecuteMsg, InstantiateMsg as FactoryInstantiate, PoolInfo,
     QueryMsg as FactoryQueryMsg,
 };
 use packages::pair::{ExecuteMsg as PairExecuteMsg, Token, TokenInfo};
@@ -56,7 +55,6 @@ fn mock_coin() -> Box<dyn Contract<Empty>> {
     );
     Box::new(contract)
 }
-
 
 #[derive(Debug)]
 #[allow(dead_code)]
@@ -265,35 +263,31 @@ fn add_liquidity_test() {
     );
 
     app.execute_contract(
-            Addr::unchecked("user"),
-            contract_info.token1_contract_addr.clone(),
-            &cw20::Cw20ExecuteMsg::IncreaseAllowance {
-                spender: pair_contract_addr.clone(),
-                amount: Uint128::from(200u128),
-                expires: None,
-            },
-            &[],
-        )
-        .unwrap();
-    println!(
-        "Increased Allowance for Token1 \n",
-    );
+        Addr::unchecked("user"),
+        contract_info.token1_contract_addr.clone(),
+        &cw20::Cw20ExecuteMsg::IncreaseAllowance {
+            spender: pair_contract_addr.clone(),
+            amount: Uint128::from(200u128),
+            expires: None,
+        },
+        &[],
+    )
+    .unwrap();
+    println!("Increased Allowance for Token1 \n",);
 
     app.execute_contract(
-            Addr::unchecked("user"),
-            contract_info.token2_contract_addr.clone(),
-            &cw20::Cw20ExecuteMsg::IncreaseAllowance {
-                spender: pair_contract_addr.clone(),
-                amount: Uint128::from(100u128),
-                expires: None,
-            },
-            &[],
-        )
-        .unwrap();
+        Addr::unchecked("user"),
+        contract_info.token2_contract_addr.clone(),
+        &cw20::Cw20ExecuteMsg::IncreaseAllowance {
+            spender: pair_contract_addr.clone(),
+            amount: Uint128::from(100u128),
+            expires: None,
+        },
+        &[],
+    )
+    .unwrap();
 
-    println!(
-        "Increased Allowance for Token2 \n",
-    );
+    println!("Increased Allowance for Token2 \n",);
 
     let add_liquidity_res = app
         .execute_contract(
@@ -431,38 +425,32 @@ fn withdraw_liquidity() {
         contract_info.token2_contract_addr.clone(),
     );
 
-    app
-        .execute_contract(
-            Addr::unchecked("user"),
-            contract_info.token1_contract_addr.clone(),
-            &cw20::Cw20ExecuteMsg::IncreaseAllowance {
-                spender: pair_contract_addr.clone(),
-                amount: Uint128::from(200u128),
-                expires: None,
-            },
-            &[],
-        )
-        .unwrap();
-    println!(
-        "Increased Allowance for Token1 \n",
-    );
+    app.execute_contract(
+        Addr::unchecked("user"),
+        contract_info.token1_contract_addr.clone(),
+        &cw20::Cw20ExecuteMsg::IncreaseAllowance {
+            spender: pair_contract_addr.clone(),
+            amount: Uint128::from(200u128),
+            expires: None,
+        },
+        &[],
+    )
+    .unwrap();
+    println!("Increased Allowance for Token1 \n",);
 
-    app
-        .execute_contract(
-            Addr::unchecked("user"),
-            contract_info.token2_contract_addr.clone(),
-            &cw20::Cw20ExecuteMsg::IncreaseAllowance {
-                spender: pair_contract_addr.clone(),
-                amount: Uint128::from(100u128),
-                expires: None,
-            },
-            &[],
-        )
-        .unwrap();
+    app.execute_contract(
+        Addr::unchecked("user"),
+        contract_info.token2_contract_addr.clone(),
+        &cw20::Cw20ExecuteMsg::IncreaseAllowance {
+            spender: pair_contract_addr.clone(),
+            amount: Uint128::from(100u128),
+            expires: None,
+        },
+        &[],
+    )
+    .unwrap();
 
-    println!(
-        "Increased Allowance for Token2\n",
-    );
+    println!("Increased Allowance for Token2\n",);
 
     let add_liquidity_res = app
         .execute_contract(
@@ -487,7 +475,6 @@ fn withdraw_liquidity() {
 
     println!("Add liquidity Response: {:?}\n", add_liquidity_res);
 
-
     let withdraw_res = app.execute_contract(
         Addr::unchecked("user"),
         Addr::unchecked(pair_contract_addr.clone()),
@@ -502,3 +489,4 @@ fn withdraw_liquidity() {
 
     println!("Withdraw Res: {:?}\n", withdraw_res);
 }
+

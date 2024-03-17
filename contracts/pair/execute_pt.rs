@@ -1,7 +1,8 @@
-use crate::state::{PairInfo, PAIR_INFO};
+use crate::state::PAIR_INFO;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::{to_binary, DepsMut, Env, MessageInfo, Response, StdError, StdResult};
 use cw20::Cw20ExecuteMsg;
+use packages::pair::PairInfo;
 
 // version info for migration info
 const _CONTRACT_NAME: &str = "crates.io:nibiru-hack";
@@ -10,8 +11,11 @@ use crate::query_pt::query;
 
 pub mod execute {
 
-    use cosmwasm_std::{CosmosMsg, Decimal256, Empty, WasmMsg, BankMsg, Coin, Uint128};
-    use cw20_base::{state::{TOKEN_INFO, BALANCES}, ContractError};
+    use cosmwasm_std::{BankMsg, Coin, CosmosMsg, Decimal256, Empty, Uint128, WasmMsg};
+    use cw20_base::{
+        state::{BALANCES, TOKEN_INFO},
+        ContractError,
+    };
 
     use super::*;
     use packages::pair::{Token, TokenInfo};
@@ -26,12 +30,14 @@ pub mod execute {
         min_amount_out: u128,
     ) -> StdResult<Response> {
         let pair_info: PairInfo = PAIR_INFO.load(deps.storage).unwrap();
-        
+
         if from_token == to_token {
             return Err(StdError::generic_err("Cannot swap same token"));
         }
-        
-        if(from_token != pair_info.assets[0] && from_token != pair_info.assets[1]) || (to_token != pair_info.assets[0] && to_token != pair_info.assets[1]) {
+
+        if (from_token != pair_info.assets[0] && from_token != pair_info.assets[1])
+            || (to_token != pair_info.assets[0] && to_token != pair_info.assets[1])
+        {
             return Err(StdError::generic_err("Pair does not exist"));
         }
 
@@ -51,32 +57,32 @@ pub mod execute {
             }
             TokenInfo::NativeToken { denom: _denom } => {}
         };
-        
+
         let amount_out = calculate_swap_amount(deps, env, from_token, to_token.clone(), amount_in)?;
 
         if amount_out < min_amount_out {
             return Err(StdError::generic_err("Insufficient amount out"));
         }
 
-       // let res = Response::new().add_message(token_transfer);
+        // let res = Response::new().add_message(token_transfer);
         let token_transfer: CosmosMsg<Empty> = match &to_token {
-            TokenInfo::CW20Token { contract_addr } => CosmosMsg::Wasm(WasmMsg::Execute { 
+            TokenInfo::CW20Token { contract_addr } => CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: contract_addr.to_string(),
-                msg: to_binary(&Cw20ExecuteMsg::Transfer { 
-                    recipient: info.sender.to_string().clone(), 
-                    amount: amount_out.into(), 
-                })?, funds: vec![], 
-                
+                msg: to_binary(&Cw20ExecuteMsg::Transfer {
+                    recipient: info.sender.to_string().clone(),
+                    amount: amount_out.into(),
+                })?,
+                funds: vec![],
             }),
-            TokenInfo::NativeToken { denom } => CosmosMsg::Bank(BankMsg::Send { 
-                to_address: info.sender.to_string().clone(), 
-                amount: vec![Coin { 
-                    denom: denom.to_string().clone(), 
-                    amount: amount_out.into(), 
+            TokenInfo::NativeToken { denom } => CosmosMsg::Bank(BankMsg::Send {
+                to_address: info.sender.to_string().clone(),
+                amount: vec![Coin {
+                    denom: denom.to_string().clone(),
+                    amount: amount_out.into(),
                 }],
             }),
         };
-        
+
         Ok(res.add_message(token_transfer))
     }
 
@@ -86,7 +92,7 @@ pub mod execute {
         from_token: TokenInfo,
         to_token: TokenInfo,
         amount_in: u128,
-    ) -> StdResult<u128> {  
+    ) -> StdResult<u128> {
         let mut token_balances = vec![];
         let this_address = env.contract.address.clone();
         let assets = [from_token.clone(), to_token.clone()];
@@ -110,7 +116,9 @@ pub mod execute {
         // (x * y) / (x+a) = (y-b)
         // (x * y) / (x+a) + b = y
         // b = y - ( (x * y) / (x+a) )
-        let amount_out = token_balances[1].u128() - (token_balances[1] * token_balances[0]).u128() / (token_balances[0].u128() + amount_in);
+        let amount_out = token_balances[1].u128()
+            - (token_balances[1] * token_balances[0]).u128()
+                / (token_balances[0].u128() + amount_in);
 
         Ok(amount_out)
     }
@@ -122,8 +130,7 @@ pub mod execute {
         recipient: String,
         amount: Uint128,
     ) -> Result<Response, ContractError> {
-        let mut config = TOKEN_INFO
-        .load(deps.storage)?;
+        let mut config = TOKEN_INFO.load(deps.storage)?;
         // update supply and enforce cap
         config.total_supply += amount;
         if let Some(limit) = config.get_cap() {
@@ -132,7 +139,7 @@ pub mod execute {
             }
         }
         TOKEN_INFO.save(deps.storage, &config)?;
-    
+
         // add amount to recipient balance
         let rcpt_addr = deps.api.addr_validate(&recipient)?;
         BALANCES.update(
@@ -140,7 +147,7 @@ pub mod execute {
             &rcpt_addr,
             |balance: Option<Uint128>| -> StdResult<_> { Ok(balance.unwrap_or_default() + amount) },
         )?;
-    
+
         let res = Response::new()
             .add_attribute("action", "mint")
             .add_attribute("to", recipient)
@@ -153,14 +160,13 @@ pub mod execute {
         env: Env,
         info: MessageInfo,
         assets: [Token; 2],
-        min_liquidity: Uint128
+        min_liquidity: Uint128,
     ) -> StdResult<Response> {
         // check if the pair exists
         let pair_info: PairInfo = PAIR_INFO.load(deps.storage).unwrap();
-        if !(
-                (assets[0].info == pair_info.assets[0] && assets[1].info == pair_info.assets[1])
-                || (assets[0].info == pair_info.assets[1] && assets[1].info == pair_info.assets[0])
-            ){
+        if !((assets[0].info == pair_info.assets[0] && assets[1].info == pair_info.assets[1])
+            || (assets[0].info == pair_info.assets[1] && assets[1].info == pair_info.assets[0]))
+        {
             return Err(StdError::generic_err("Pair does not exist"));
         }
 
@@ -190,7 +196,7 @@ pub mod execute {
                 TokenInfo::CW20Token { contract_addr } => query::query_token_balance(
                     &deps.querier,
                     contract_addr.clone(),
-                    info.sender.clone()
+                    info.sender.clone(),
                 )?,
                 TokenInfo::NativeToken { denom } => query::query_native_balance(
                     &deps.querier,
@@ -199,7 +205,10 @@ pub mod execute {
                 )?,
             };
             if token_bal == Uint128::from(0u128) {
-                return Err(StdError::generic_err(format!("Balance found zero {:?}", asset.info)));
+                return Err(StdError::generic_err(format!(
+                    "Balance found zero {:?}",
+                    asset.info
+                )));
             }
             token_balances.push(token_bal);
         }
@@ -217,9 +226,8 @@ pub mod execute {
 
         let liquidity_minted: Uint128;
         if res.total_supply == Uint128::from(0u128) {
-            liquidity_minted = std::cmp::min(asset0_value,asset1_value);
-        }
-        else {
+            liquidity_minted = std::cmp::min(asset0_value, asset1_value);
+        } else {
             liquidity_minted = std::cmp::min(
                 asset0_value.multiply_ratio(res.total_supply, token_balances[0]),
                 asset1_value.multiply_ratio(res.total_supply, token_balances[1]),
@@ -227,11 +235,21 @@ pub mod execute {
         }
 
         if liquidity_minted < min_liquidity {
-            return Err(StdError::generic_err(format!("Insufficient liquidity minted {:?}", liquidity_minted)));
+            return Err(StdError::generic_err(format!(
+                "Insufficient liquidity minted {:?}",
+                liquidity_minted
+            )));
         }
-        
+
         // mint the lp token, to the sender
-        execute_mint(deps, env, info.clone(), info.sender.to_string().clone(), liquidity_minted).unwrap();
+        execute_mint(
+            deps,
+            env,
+            info.clone(),
+            info.sender.to_string().clone(),
+            liquidity_minted,
+        )
+        .unwrap();
 
         // store the lp token balance in the state
         return Ok(Response::new().add_messages(messages).add_attributes(vec![
@@ -277,17 +295,16 @@ pub mod execute {
             token_balances.push(token_bal);
         }
 
-        let assets_returned = [ 
-            lp_token.amount.multiply_ratio(token_balances[0], res.total_supply),
-            lp_token.amount.multiply_ratio(token_balances[1], res.total_supply),
+        let assets_returned = [
+            lp_token
+                .amount
+                .multiply_ratio(token_balances[0], res.total_supply),
+            lp_token
+                .amount
+                .multiply_ratio(token_balances[1], res.total_supply),
         ];
 
-        cw20_base::contract::execute_burn(
-            deps, 
-            env, 
-            info.clone(), 
-            lp_token.amount
-        ).unwrap();
+        cw20_base::contract::execute_burn(deps, env, info.clone(), lp_token.amount).unwrap();
 
         let mut messages = vec![];
         for (i, asset) in pair_info.assets.iter().enumerate() {
@@ -302,7 +319,7 @@ pub mod execute {
                         funds: vec![],
                     });
                     messages.push(cw20_asset_transfer);
-                },
+                }
                 TokenInfo::NativeToken { denom } => {
                     let native_asset_transfer: CosmosMsg<Empty> = CosmosMsg::Bank(BankMsg::Send {
                         to_address: info.sender.to_string().clone(),
@@ -316,11 +333,12 @@ pub mod execute {
             };
         }
 
-        Ok(Response::new()
-            .add_messages(messages)
-            .add_attributes(vec![
-                ("action", "withdraw liquidity"),
-                ("Assets returned", &format!("{}, {}", assets_returned[0], assets_returned[1])),
-            ]))  
+        Ok(Response::new().add_messages(messages).add_attributes(vec![
+            ("action", "withdraw liquidity"),
+            (
+                "Assets returned",
+                &format!("{}, {}", assets_returned[0], assets_returned[1]),
+            ),
+        ]))
     }
 }

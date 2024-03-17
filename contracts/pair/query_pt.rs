@@ -1,6 +1,7 @@
-use crate::state::{PairInfo, PAIR_INFO};
+use crate::state::PAIR_INFO;
 use cosmwasm_std::{to_binary, Deps, StdResult};
 use cw20::BalanceResponse as CW20_BalanceResponse;
+use packages::pair::PairInfo;
 // version info for migration info
 const _CONTRACT_NAME: &str = "crates.io:nibiru-hack";
 const _CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -18,18 +19,16 @@ pub mod query {
         Ok(pair_info)
     }
 
-    
-
-
     pub fn _query_token_info(
         querier: &QuerierWrapper,
         contract_addr: Addr,
     ) -> StdResult<TokenInfoResponse> {
-        let token_info: TokenInfoResponse = querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-            contract_addr: contract_addr.to_string(),
-            msg: to_binary(&Cw20QueryMsg::TokenInfo {})?,
-        }))?;
-    
+        let token_info: TokenInfoResponse =
+            querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+                contract_addr: contract_addr.to_string(),
+                msg: to_binary(&Cw20QueryMsg::TokenInfo {})?,
+            }))?;
+
         Ok(token_info)
     }
 

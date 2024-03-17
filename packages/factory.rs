@@ -1,5 +1,11 @@
-use cosmwasm_schema::cw_serde;
 use crate::pair::TokenInfo;
+use cosmwasm_schema::{cw_serde, QueryResponses};
+
+#[cw_serde]
+pub struct PoolInfo {
+    pub pair_addr: String,
+    pub assets: [TokenInfo; 2],
+}
 
 #[cw_serde]
 pub struct InstantiateMsg {
@@ -16,10 +22,10 @@ pub enum ExecuteMsg {
 }
 
 #[cw_serde]
+#[derive(QueryResponses)]
 pub enum QueryMsg {
-    Pair {
-        asset_infos: [TokenInfo; 2],
-    },
+    #[returns(PoolInfo)]
+    Pair { asset_infos: [TokenInfo; 2] },
 }
 
 // We define a custom struct for each query response

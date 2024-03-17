@@ -1,8 +1,8 @@
-use packages::router::{ExecuteMsg, InstantiateMsg, QueryMsg};
-use crate::state::{Config, CONFIG};
+use crate::state::CONFIG;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
+use packages::router::{Config, ExecuteMsg, InstantiateMsg, QueryMsg};
 
 // version info for migration info
 const _CONTRACT_NAME: &str = "crates.io:nibiru-hack";
@@ -23,24 +23,27 @@ pub fn instantiate(
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn execute(_deps: DepsMut, _env: Env, _info: MessageInfo, _msg: ExecuteMsg) -> StdResult<Response> {
-        Ok(Response::new())
+pub fn execute(
+    _deps: DepsMut,
+    _env: Env,
+    _info: MessageInfo,
+    _msg: ExecuteMsg,
+) -> StdResult<Response> {
+    Ok(Response::new())
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
-        QueryMsg::GetFactoryAddr {  } => to_binary(&query::get_factory_addr(deps)?),
+        QueryMsg::GetFactoryAddr {} => to_binary(&query::get_factory_addr(deps)?),
     }
 }
 
 pub mod query {
-    
+
     use super::*;
 
-    pub fn get_factory_addr(_deps: Deps) -> StdResult<Binary> {
-        let config = CONFIG.load(_deps.storage)?;
-        to_binary(&config)
+    pub fn get_factory_addr(_deps: Deps) -> StdResult<Config> {
+        Ok(CONFIG.load(_deps.storage).unwrap())
     }
 }
-

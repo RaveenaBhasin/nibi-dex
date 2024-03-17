@@ -2,7 +2,7 @@
 name = "router"
 version = "0.1.0"
 authors = [
-    "Mehul0011 <imehul24@gmail.com>", 
+    "Mehul0011 <imehul24@gmail.com>",
     "RaveenaBhasin <raveenabhasin15@gmail.com>"
 ]
 edition = "2021"
@@ -14,6 +14,10 @@ exclude = [
 ]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[[bin]]
+name = "router-schema"
+path = "bin/schema.rs"
 
 [lib]
 crate-type = ["cdylib", "rlib"]
@@ -47,6 +51,6 @@ thiserror = { version = "1.0.44" }
 pair = { path = "../pair" }
 factory = { path = "../factory" }
 
-[dev-dependencies]  
+[dev-dependencies]
 cw-multi-test = "0.16.5"
 

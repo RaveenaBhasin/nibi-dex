@@ -1,5 +1,7 @@
 [alias]
 wasm = "build --release --lib --target wasm32-unknown-unknown"
 unit-test = "test --lib"
-schema = "run --bin schema"
+factory-schema = "run --bin factory-schema"
+pair-schema = "run --bin pair-schema"
+router-schema = "run --bin router-schema"
 integration-test = "test -- --show-output"

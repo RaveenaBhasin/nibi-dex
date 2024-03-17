@@ -1,11 +1,14 @@
+use crate::state::{FactoryConfig, TmpPoolInfo, FACTORY_CONFIG, TEMP_POOL_INFO};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
-use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, StdError, CosmosMsg, WasmMsg, SubMsg, Reply, ReplyOn};
-use packages::factory::{ExecuteMsg, InstantiateMsg, QueryMsg};
-use crate::state::{FACTORY_CONFIG, FactoryConfig, PoolInfo, TEMP_POOL_INFO, TmpPoolInfo};
-use packages::pair::{InstantiateMsg as InstantiatePairMsg, ExecuteMsg as ExecutePairMsg};
+use cosmwasm_std::{
+    to_binary, Binary, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Reply, ReplyOn, Response,
+    StdError, StdResult, SubMsg, WasmMsg,
+};
 use cw0::*;
-use cw20::{ MinterResponse, Cw20ExecuteMsg };
+use cw20::{Cw20ExecuteMsg, MinterResponse};
+use packages::factory::{ExecuteMsg, InstantiateMsg, PoolInfo, QueryMsg};
+use packages::pair::{ExecuteMsg as ExecutePairMsg, InstantiateMsg as InstantiatePairMsg};
 // version info for migration info
 // const CONTRACT_NAME: &str = "crates.io:nibiru-hack";
 // const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -25,14 +28,11 @@ pub fn instantiate(
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn execute(
-    deps: DepsMut,
-    env: Env,
-    info: MessageInfo,
-    msg: ExecuteMsg,
-) -> StdResult<Response> {
+pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> StdResult<Response> {
     match msg {
-        ExecuteMsg::CreateNewPair { asset_infos } => execute::create_pair(deps, env, info, asset_infos)
+        ExecuteMsg::CreateNewPair { asset_infos } => {
+            execute::create_pair(deps, env, info, asset_infos)
+        }
     }
 }
 
@@ -47,30 +47,36 @@ pub mod execute {
         deps: DepsMut,
         env: Env,
         _info: MessageInfo,
-        asset_infos: [TokenInfo; 2]
+        asset_infos: [TokenInfo; 2],
     ) -> StdResult<Response> {
         let factory_config: FactoryConfig = FACTORY_CONFIG.load(deps.storage)?;
-        
-        let mut asset_in_bytes = asset_infos.iter().map(|info| info.get_as_bytes()).collect::<Vec<&[u8]>>();
+
+        let mut asset_in_bytes = asset_infos
+            .iter()
+            .map(|info| info.get_as_bytes())
+            .collect::<Vec<&[u8]>>();
         asset_in_bytes.sort();
 
         // console.log("hello id", asset_in_bytes);
-        
-        let pair_id =  asset_in_bytes.concat();
+
+        let pair_id = asset_in_bytes.concat();
         if let Ok(Some(_)) = POOL_ID_TO_POOL_INFO.may_load(deps.storage, &pair_id) {
             return Err(StdError::generic_err("Pair already exists"));
         }
-        
-        TEMP_POOL_INFO.save(deps.storage, &TmpPoolInfo {
-            pool_id: pair_id.clone(), 
-            assets: asset_infos.clone(),
-        })?;
+
+        TEMP_POOL_INFO.save(
+            deps.storage,
+            &TmpPoolInfo {
+                pool_id: pair_id.clone(),
+                assets: asset_infos.clone(),
+            },
+        )?;
 
         let minter_response = MinterResponse {
             minter: env.contract.address.to_string().clone(),
-            cap: None
+            cap: None,
         };
-        
+
         let instantiate_pair = CosmosMsg::Wasm(WasmMsg::Instantiate {
             code_id: factory_config.pair_code_id,
             funds: vec![],
@@ -78,28 +84,31 @@ pub mod execute {
             label: "pair contract".to_string(),
             msg: to_binary(&InstantiatePairMsg {
                 token_info: asset_infos,
-                lp_token_decimal:  18u8,
+                lp_token_decimal: 18u8,
                 cw20_instantiate: cw20_base::msg::InstantiateMsg {
                     name: "pair token".to_string(),
                     symbol: "pair".to_string(),
                     decimals: 18u8,
-                    initial_balances: vec![], 
+                    initial_balances: vec![],
                     mint: Some(minter_response),
                     marketing: None,
                 },
             })?,
         });
 
-        Ok(Response::new()
-            .add_submessage(SubMsg {id: 1u64, msg: instantiate_pair, gas_limit: None, reply_on: ReplyOn::Success})
-        )
+        Ok(Response::new().add_submessage(SubMsg {
+            id: 1u64,
+            msg: instantiate_pair,
+            gas_limit: None,
+            reply_on: ReplyOn::Success,
+        }))
     }
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
-        QueryMsg::Pair { asset_infos } => to_binary(&query::pool_info(deps, asset_infos)?)
+        QueryMsg::Pair { asset_infos } => to_binary(&query::pool_info(deps, asset_infos)?),
     }
 }
 
@@ -110,19 +119,18 @@ pub mod query {
 
     use super::*;
     pub fn pool_info(_deps: Deps, assetinfos: [TokenInfo; 2]) -> StdResult<PoolInfo> {
-        let mut asset_in_bytes = assetinfos.iter().map(|info| info.get_as_bytes()).collect::<Vec<&[u8]>>();
+        let mut asset_in_bytes = assetinfos
+            .iter()
+            .map(|info| info.get_as_bytes())
+            .collect::<Vec<&[u8]>>();
         asset_in_bytes.sort();
-        let pair_id =  asset_in_bytes.concat();
-        Ok(POOL_ID_TO_POOL_INFO.load(_deps.storage,  &pair_id)?)
+        let pair_id = asset_in_bytes.concat();
+        Ok(POOL_ID_TO_POOL_INFO.load(_deps.storage, &pair_id)?)
     }
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn reply(
-    deps: DepsMut, 
-    env: Env, 
-    msg: Reply
-) -> StdResult<Response> {
+pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> StdResult<Response> {
     match msg.id {
         1u64 => reply::instantiate_reply(deps, env, msg),
         _ => Ok(Response::default()),
@@ -136,16 +144,13 @@ pub mod reply {
 
     use super::*;
 
-    pub fn instantiate_reply(
-        deps: DepsMut,
-        _env: Env, 
-        msg: Reply
-    ) ->  StdResult<Response> {
+    pub fn instantiate_reply(deps: DepsMut, _env: Env, msg: Reply) -> StdResult<Response> {
         let temp_pool_info: TmpPoolInfo = TEMP_POOL_INFO.load(deps.storage)?;
 
-        let res = parse_reply_instantiate_data(msg)
-        .map_err(|e| StdError::generic_err(format!("parse reply instantiate data error: {}", e)))?;
-        
+        let res = parse_reply_instantiate_data(msg).map_err(|e| {
+            StdError::generic_err(format!("parse reply instantiate data error: {}", e))
+        })?;
+
         POOL_ID_TO_POOL_INFO.save(
             deps.storage,
             &temp_pool_info.pool_id,
@@ -155,17 +160,21 @@ pub mod reply {
             },
         )?;
 
-        let update_minter: CosmosMsg<Empty> = CosmosMsg::Wasm(WasmMsg::Execute { 
-            contract_addr: res.contract_address.clone(), 
+        let update_minter: CosmosMsg<Empty> = CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: res.contract_address.clone(),
             msg: to_binary(&ExecutePairMsg::TokenExecute(
-                Cw20ExecuteMsg::UpdateMinter { 
-                    new_minter: Some(res.contract_address.clone()) 
-                }
-            ))?, 
+                Cw20ExecuteMsg::UpdateMinter {
+                    new_minter: Some(res.contract_address.clone()),
+                },
+            ))?,
             funds: vec![],
         });
 
-        Ok(Response::new().add_submessage(SubMsg { id: 2u64, msg: update_minter, gas_limit: None, reply_on: ReplyOn::Success }))
+        Ok(Response::new().add_submessage(SubMsg {
+            id: 2u64,
+            msg: update_minter,
+            gas_limit: None,
+            reply_on: ReplyOn::Success,
+        }))
     }
 }
-    
