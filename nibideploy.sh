@@ -1,6 +1,6 @@
 getAddress() {
     #!/bin/bash
-    # Store the output of 'junod keys list' command
+    # Store the output of 'nibid keys list' command
     output=$(nibid keys list <<<"$(source ./../../.env && echo $NIBI_KEY)")
 
     # Extract the addresses from the output using 'jq'
@@ -47,12 +47,14 @@ echo "✅ Build successful!........Enjoy 🚀"
 # cargo run-script optimize
 # echo "✅ Optimized!........Enjoy 🚀"
 
-CHAIN_ID=nibiru-itn-1
+# CHAIN_ID=nibiru-itn-1
+CHAIN_ID=nibiru-testnet-1
 echo "Now using chain id $CHAIN_ID...🟡"
 
 nibid config broadcast-mode sync
 
-RPC="https://rpc.itn-1.nibiru.fi:443"
+# RPC="https://rpc.itn-1.nibiru.fi:443"
+RPC="https://rpc.testnet-1.nibiru.fi:443"
 NIBI=00unibi
 TXFLAG="--chain-id $CHAIN_ID --node $RPC --gas=130000 --fees=35$NIBI --gas-adjustment 1.3"
 echo "TXFLAG: $TXFLAG"
@@ -165,28 +167,28 @@ getAddress
 # nibid tx wasm execute $CONTRACT "$SWAP" --from $SAVED_ADDRESS $TXFLAG -y <<< "$(source ./../../.env && echo $NIBI_KEY)"
 
 
-ADD_LIQ='{
-    "add_liquidity": {
-        "assets": [
-            {
-                "info": {
-                    "c_w20_token": {
-                        "contract_addr": "nibi1fs882tudg4pegayj5fpess4mkupa77tx9x4chndwpezqkjegzhfsqlnkew"
-                    }
-                },
-                "amount":"10000000"
-            },
-            {
-                "info": {
-                    "c_w20_token": {
-                        "contract_addr": "nibi1xddyc03asynlf74tkfuhqs0t4qtljv7md5rawd6dk7nm2s9teckqphgjfn" 
-                    }
-                },
-                "amount": "10000000"
-            }
-        ],
-        "min_liquidity_amt": "1000000"
-    }
-}'
-CONTRACT="nibi16j3057pchfy0fjwg749kkcve3cyusv2pg78stat6snncwayksu3qq39d0q"
-nibid tx wasm execute $CONTRACT "$ADD_LIQ" --from $SAVED_ADDRESS $TXFLAG -y <<< "$(source ./../../.env && echo $NIBI_KEY)"
+# ADD_LIQ='{
+#     "add_liquidity": {
+#         "assets": [
+#             {
+#                 "info": {
+#                     "c_w20_token": {
+#                         "contract_addr": "nibi1fs882tudg4pegayj5fpess4mkupa77tx9x4chndwpezqkjegzhfsqlnkew"
+#                     }
+#                 },
+#                 "amount":"10000000"
+#             },
+#             {
+#                 "info": {
+#                     "c_w20_token": {
+#                         "contract_addr": "nibi1xddyc03asynlf74tkfuhqs0t4qtljv7md5rawd6dk7nm2s9teckqphgjfn" 
+#                     }
+#                 },
+#                 "amount": "10000000"
+#             }
+#         ],
+#         "min_liquidity_amt": "1000000"
+#     }
+# }'
+# CONTRACT="nibi16j3057pchfy0fjwg749kkcve3cyusv2pg78stat6snncwayksu3qq39d0q"
+# nibid tx wasm execute $CONTRACT "$ADD_LIQ" --from $SAVED_ADDRESS $TXFLAG -y <<< "$(source ./../../.env && echo $NIBI_KEY)"
