@@ -1,4 +1,4 @@
-use cosmwasm_std::{coin, Addr, Empty, Uint128};
+use cosmwasm_std::{coin, Addr, Coin, Empty, Uint128};
 use cw20::{BalanceResponse, Cw20Coin};
 use cw20_base::msg::{InstantiateMsg as Cw20InstantiateMsg, QueryMsg as Cw20QueryMsg};
 use cw_multi_test::{App, Contract, ContractWrapper, Executor};
@@ -64,7 +64,20 @@ struct ContractInfo {
     router_contract_addr: Addr,
 }
 
-fn mint_native(app: &mut App, beneficiary: String, denom: String, amount: u128) {
+fn mint_native(
+    app: &mut App,
+    beneficiary: String,
+    denom: String,
+    amount: u128,
+    // querier: &QuerierWrapper,
+) {
+    // let balance: BalanceResponse = querier
+    //     .query(&QueryRequest::Bank(BankQuery::Balance {
+    //         address: beneficiary.to_string(),
+    //         denom: denom.clone(),
+    //     }))
+    //     .unwrap();
+    // println!("balance {:?}", balance);
     app.sudo(cw_multi_test::SudoMsg::Bank(
         cw_multi_test::BankSudo::Mint {
             to_address: beneficiary,
@@ -87,7 +100,19 @@ fn initialize_contracts(app: &mut App) -> ContractInfo {
     let router_code_id = app.store_code(router_contract());
     println!("Router code id: {}", router_code_id);
 
-    mint_native(app, "user".to_string(), "unibi".to_string(), 100);
+    mint_native(
+        app,
+        "user".to_string(),
+        "unibi".to_string(),
+        100,
+        //      &app.wrap(),
+    );
+
+    let new_balance = app
+        .wrap()
+        .query_balance("user".to_string(), "unibi".to_string());
+    println!("new balance {:?}", new_balance);
+
     let token1_contract_addr = app
         .instantiate_contract(
             token1_code_id,
@@ -313,7 +338,13 @@ fn swap_token_test() {
         "unibi".to_string(),
     );
 
-    mint_native(&mut app, "user".to_string(), "unibi".to_string(), 200);
+    mint_native(
+        &mut app,
+        "user".to_string(),
+        "unibi".to_string(),
+        100,
+        //     &app.wrap(),
+    );
     let increase_allowance_token1 = app
         .execute_contract(
             Addr::unchecked("user"),
@@ -347,9 +378,24 @@ fn swap_token_test() {
             ],
             min_liquidity_amt: Uint128::from(100u128),
         },
-        &[],
+        &vec![Coin {
+            amount: Uint128::from(100u128),
+            denom: "unibi".to_string(),
+        }],
     )
     .unwrap();
+
+    // Check if user NativeToken, cw20Token balances reduced
+    let new_balance = app.wrap().query_balance(
+        Addr::unchecked(pair_contract_addr.clone()),
+        "unibi".to_string(),
+    );
+    println!(
+        "Pair unibi balance after liquidity addtion: {:?}",
+        new_balance
+    );
+    // Check if user LpToken balance Increased
+    // Check if contract NativeToken, cw20Token balance increased by same amount
 
     println!("Successfully added liquidity \n");
     let query_lp_token: BalanceResponse = app
@@ -372,8 +418,8 @@ fn swap_token_test() {
             Addr::unchecked("user"),
             Addr::unchecked(pair_contract_addr.clone()),
             &PairExecuteMsg::SwapAsset {
-                from_token: token_info_2.clone(),
-                to_token: token_info_1.clone(),
+                from_token: token_info_1.clone(),
+                to_token: token_info_2.clone(),
                 amount_in: 10u128,
                 min_amount_out: 8u128,
             },

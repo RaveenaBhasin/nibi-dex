@@ -41,6 +41,14 @@ pub mod execute {
             return Err(StdError::generic_err("Pair does not exist"));
         }
 
+        // Funds sent should not just be equal, but greater than equal
+        // funds array should just be checked in case of native tokens only
+        // Funds should not be asserted as equality but include_str!("")
+
+        // if info.funds != vec![Coin {
+        //     amount: Uint128::from(tok)
+        // }])
+
         let mut res = Response::new();
         match &from_token {
             TokenInfo::CW20Token { contract_addr } => {
@@ -59,6 +67,7 @@ pub mod execute {
         };
 
         let amount_out = calculate_swap_amount(deps, env, from_token, to_token.clone(), amount_in)?;
+        println!("Amount out {:?}", amount_out);
 
         if amount_out < min_amount_out {
             return Err(StdError::generic_err("Insufficient amount out"));
@@ -120,6 +129,10 @@ pub mod execute {
             - (token_balances[1] * token_balances[0]).u128()
                 / (token_balances[0].u128() + amount_in);
 
+        println!(
+            "Logging inside contract swap function{:?} {:?} {:?} ",
+            assets, amount_out, token_balances
+        );
         Ok(amount_out)
     }
 
