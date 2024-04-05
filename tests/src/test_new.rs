@@ -1,6 +1,6 @@
-use cosmwasm_std::{Addr, Empty, Uint128};
-use cw20::{Cw20Coin, Cw20QueryMsg};
-use cw20_base::msg::InstantiateMsg as Cw20InstantiateMsg;
+use cosmwasm_std::{coin, Addr, Coin, Empty, Uint128};
+use cw20::{BalanceResponse, Cw20Coin};
+use cw20_base::msg::{InstantiateMsg as Cw20InstantiateMsg, QueryMsg as Cw20QueryMsg};
 use cw_multi_test::{App, Contract, ContractWrapper, Executor};
 use packages::factory::{
     ExecuteMsg as FactoryExecuteMsg, InstantiateMsg as FactoryInstantiate, PoolInfo,
@@ -60,18 +60,36 @@ fn mock_coin() -> Box<dyn Contract<Empty>> {
 #[allow(dead_code)]
 struct ContractInfo {
     token1_contract_addr: Addr,
-    token2_contract_addr: Addr,
     factory_contract_addr: Addr,
     router_contract_addr: Addr,
 }
 
+fn mint_native(
+    app: &mut App,
+    beneficiary: String,
+    denom: String,
+    amount: u128,
+    // querier: &QuerierWrapper,
+) {
+    // let balance: BalanceResponse = querier
+    //     .query(&QueryRequest::Bank(BankQuery::Balance {
+    //         address: beneficiary.to_string(),
+    //         denom: denom.clone(),
+    //     }))
+    //     .unwrap();
+    // println!("balance {:?}", balance);
+    app.sudo(cw_multi_test::SudoMsg::Bank(
+        cw_multi_test::BankSudo::Mint {
+            to_address: beneficiary,
+            amount: vec![coin(amount, denom)],
+        },
+    ))
+    .unwrap();
+}
+
 fn initialize_contracts(app: &mut App) -> ContractInfo {
-    
     let token1_code_id = app.store_code(mock_coin());
     println!("Token 1 code id: {}", token1_code_id);
-
-    let token2_code_id = app.store_code(mock_coin());
-    println!("Token 2 code id: {}", token2_code_id);
 
     let pair_code_id = app.store_code(pair_contract());
     println!("Pair code id: {}", pair_code_id);
@@ -82,6 +100,18 @@ fn initialize_contracts(app: &mut App) -> ContractInfo {
     let router_code_id = app.store_code(router_contract());
     println!("Router code id: {}", router_code_id);
 
+    mint_native(
+        app,
+        "user".to_string(),
+        "unibi".to_string(),
+        100,
+        //      &app.wrap(),
+    );
+
+    let new_balance = app
+        .wrap()
+        .query_balance("user".to_string(), "unibi".to_string());
+    println!("new balance {:?}", new_balance);
 
     let token1_contract_addr = app
         .instantiate_contract(
@@ -104,28 +134,6 @@ fn initialize_contracts(app: &mut App) -> ContractInfo {
         )
         .unwrap();
     println!("Mock Token 1 Address: {}", token1_contract_addr);
-
-    let token2_contract_addr = app
-        .instantiate_contract(
-            token1_code_id,
-            Addr::unchecked("Sender"),
-            &Cw20InstantiateMsg {
-                name: "Mock Token 2".to_string(),
-                symbol: "MTB".to_string(),
-                decimals: 18u8,
-                initial_balances: vec![Cw20Coin {
-                    address: "user".to_string(),
-                    amount: Uint128::from(1000000u128),
-                }],
-                mint: None,
-                marketing: None,
-            },
-            &[],
-            "Instantiate Mock coin 2",
-            None,
-        )
-        .unwrap();
-    println!("Mock Token 2 Address: {}", token2_contract_addr);
 
     let factory_contract_addr = app
         .instantiate_contract(
@@ -155,7 +163,6 @@ fn initialize_contracts(app: &mut App) -> ContractInfo {
 
     ContractInfo {
         token1_contract_addr,
-        token2_contract_addr,
         factory_contract_addr,
         router_contract_addr,
     }
@@ -171,7 +178,7 @@ fn create_pair(
     app: &mut App,
     factory_contract_addr: Addr,
     token1_contract_addr: Addr,
-    denom: String
+    denom: String,
 ) -> String {
     let create_pair_res = app
         .execute_contract(
@@ -182,7 +189,7 @@ fn create_pair(
                     TokenInfo::CW20Token {
                         contract_addr: token1_contract_addr,
                     },
-                    TokenInfo::NativeToken { denom }
+                    TokenInfo::NativeToken { denom },
                 ],
             },
             &[],
@@ -222,7 +229,9 @@ fn query_pair_info_test() {
         contract_addr: contract_info.token1_contract_addr.clone(),
     };
 
-    let token_info_2 = TokenInfo::NativeToken { denom: "unibi".to_string() };
+    let token_info_2 = TokenInfo::NativeToken {
+        denom: "unibi".to_string(),
+    };
 
     let query_res: PoolInfo = app
         .wrap()
@@ -249,13 +258,15 @@ fn add_liquidity_test() {
         contract_addr: contract_info.token1_contract_addr.clone(),
     };
 
-    let token_info_2 = TokenInfo::NativeToken { denom: "unibi".to_string() };
+    let token_info_2 = TokenInfo::NativeToken {
+        denom: "unibi".to_string(),
+    };
 
     let pair_contract_addr = create_pair(
         &mut app,
         contract_info.factory_contract_addr.clone(),
         contract_info.token1_contract_addr.clone(),
-        "unibi".to_string()
+        "unibi".to_string(),
     );
 
     app.execute_contract(
@@ -270,7 +281,6 @@ fn add_liquidity_test() {
     )
     .unwrap();
     println!("Increased Allowance for Token1 \n",);
-
 
     let add_liquidity_res = app
         .execute_contract(
@@ -294,99 +304,131 @@ fn add_liquidity_test() {
         .unwrap();
 
     println!("Add liquidity Response: {:?}\n", add_liquidity_res);
+
+    let query_lp_token: BalanceResponse = app
+        .wrap()
+        .query_wasm_smart(
+            pair_contract_addr.clone(),
+            &PairQueryMsg::TokenQuery(Cw20QueryMsg::Balance {
+                address: "user".to_string(),
+            }),
+        )
+        .unwrap();
+
+    println!("Lp token balance: {:?}\n", query_lp_token);
 }
 
-// #[test]
-// fn swap_token_test() {
-//     let mut app = mock_app();
-//     let contract_info = initialize_contracts(&mut app);
+#[test]
+fn swap_token_test() {
+    let mut app = mock_app();
+    let contract_info = initialize_contracts(&mut app);
 
-//     let token_info_1 = TokenInfo::CW20Token {
-//         contract_addr: contract_info.token1_contract_addr.clone(),
-//     };
+    let token_info_1 = TokenInfo::CW20Token {
+        contract_addr: contract_info.token1_contract_addr.clone(),
+    };
 
-//     let token_info_2 = TokenInfo::CW20Token {
-//         contract_addr: contract_info.token2_contract_addr.clone(),
-//     };
+    let token_info_2 = TokenInfo::NativeToken {
+        denom: "unibi".to_string(),
+    };
 
-//     let pair_contract_addr = create_pair(
-//         &mut app,
-//         contract_info.factory_contract_addr.clone(),
-//         contract_info.token1_contract_addr.clone(),
-//         contract_info.token2_contract_addr.clone(),
-//     );
+    let pair_contract_addr = create_pair(
+        &mut app,
+        contract_info.factory_contract_addr.clone(),
+        contract_info.token1_contract_addr.clone(),
+        "unibi".to_string(),
+    );
 
-//     let increase_allowance_token1 = app
-//         .execute_contract(
-//             Addr::unchecked("user"),
-//             contract_info.token1_contract_addr.clone(),
-//             &cw20::Cw20ExecuteMsg::IncreaseAllowance {
-//                 spender: pair_contract_addr.clone(),
-//                 amount: Uint128::from(200u128),
-//                 expires: None,
-//             },
-//             &[],
-//         )
-//         .unwrap();
-//     println!(
-//         "Increased Allowance for Token1: {:?}\n",
-//         increase_allowance_token1
-//     );
+    mint_native(
+        &mut app,
+        "user".to_string(),
+        "unibi".to_string(),
+        100,
+        //     &app.wrap(),
+    );
+    let increase_allowance_token1 = app
+        .execute_contract(
+            Addr::unchecked("user"),
+            contract_info.token1_contract_addr.clone(),
+            &cw20::Cw20ExecuteMsg::IncreaseAllowance {
+                spender: pair_contract_addr.clone(),
+                amount: Uint128::from(200u128),
+                expires: None,
+            },
+            &[],
+        )
+        .unwrap();
+    println!(
+        "Increased Allowance for Token1: {:?}\n",
+        increase_allowance_token1
+    );
 
-//     let increase_allowance_token2 = app
-//         .execute_contract(
-//             Addr::unchecked("user"),
-//             contract_info.token2_contract_addr.clone(),
-//             &cw20::Cw20ExecuteMsg::IncreaseAllowance {
-//                 spender: pair_contract_addr.clone(),
-//                 amount: Uint128::from(100u128),
-//                 expires: None,
-//             },
-//             &[],
-//         )
-//         .unwrap();
+    app.execute_contract(
+        Addr::unchecked("user"),
+        Addr::unchecked(pair_contract_addr.clone()),
+        &PairExecuteMsg::AddLiquidity {
+            assets: [
+                Token {
+                    info: token_info_1.clone(),
+                    amount: Uint128::from(100u128),
+                },
+                Token {
+                    info: token_info_2.clone(),
+                    amount: Uint128::from(100u128),
+                },
+            ],
+            min_liquidity_amt: Uint128::from(100u128),
+        },
+        &vec![Coin {
+            amount: Uint128::from(100u128),
+            denom: "unibi".to_string(),
+        }],
+    )
+    .unwrap();
 
-//     println!(
-//         "Increased Allowance for Token2: {:?}\n",
-//         increase_allowance_token2
-//     );
+    // Check if user NativeToken, cw20Token balances reduced
+    let new_balance = app.wrap().query_balance(
+        Addr::unchecked(pair_contract_addr.clone()),
+        "unibi".to_string(),
+    );
+    println!(
+        "Pair unibi balance after liquidity addtion: {:?}",
+        new_balance
+    );
+    // Check if user LpToken balance Increased
+    // Check if contract NativeToken, cw20Token balance increased by same amount
 
-//     app.execute_contract(
-//         Addr::unchecked("user"),
-//         Addr::unchecked(pair_contract_addr.clone()),
-//         &PairExecuteMsg::AddLiquidity {
-//             assets: [
-//                 Token {
-//                     info: token_info_1.clone(),
-//                     amount: Uint128::from(100u128),
-//                 },
-//                 Token {
-//                     info: token_info_2.clone(),
-//                     amount: Uint128::from(100u128),
-//                 },
-//             ],
-//             min_liquidity_amt: Uint128::from(1u128),
-//         },
-//         &[],
-//     )
-//     .unwrap();
+    println!("Successfully added liquidity \n");
+    let query_lp_token: BalanceResponse = app
+        .wrap()
+        .query_wasm_smart(
+            pair_contract_addr.clone(),
+            &PairQueryMsg::TokenQuery(Cw20QueryMsg::Balance {
+                address: "user".to_string(),
+            }),
+        )
+        .unwrap();
 
-//     let swap_res = app
-//         .execute_contract(
-//             Addr::unchecked("user"),
-//             Addr::unchecked(pair_contract_addr.clone()),
-//             &PairExecuteMsg::SwapAsset {
-//                 from_token: token_info_1.clone(),
-//                 to_token: token_info_2.clone(),
-//                 amount_in: 20u128,
-//                 min_amount_out: 5u128,
-//             },
-//             &[],
-//         )
-//         .unwrap();
+    println!(
+        "Lp token balance after adding liquidity: {:?}\n",
+        query_lp_token
+    );
 
-//     println!("Swap Response: {:?}\n", swap_res);
-// }
+    let swap_res = app
+        .execute_contract(
+            Addr::unchecked("user"),
+            Addr::unchecked(pair_contract_addr.clone()),
+            &PairExecuteMsg::SwapAsset {
+                from_token: token_info_1.clone(),
+                to_token: token_info_2.clone(),
+                amount_in: 10u128,
+                min_amount_out: 8u128,
+            },
+            &[],
+        )
+        .unwrap();
+
+    println!("Swap Response: {:?}\n", swap_res);
+}
 
 // #[test]
 // fn withdraw_liquidity() {
@@ -472,4 +514,3 @@ fn add_liquidity_test() {
 
 //     println!("Withdraw Res: {:?}\n", withdraw_res);
 // }
-
