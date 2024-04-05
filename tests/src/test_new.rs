@@ -1,12 +1,12 @@
 use cosmwasm_std::{Addr, Empty, Uint128};
-use cw20::Cw20Coin;
+use cw20::{Cw20Coin, Cw20QueryMsg};
 use cw20_base::msg::InstantiateMsg as Cw20InstantiateMsg;
 use cw_multi_test::{App, Contract, ContractWrapper, Executor};
 use packages::factory::{
     ExecuteMsg as FactoryExecuteMsg, InstantiateMsg as FactoryInstantiate, PoolInfo,
     QueryMsg as FactoryQueryMsg,
 };
-use packages::pair::{ExecuteMsg as PairExecuteMsg, Token, TokenInfo};
+use packages::pair::{ExecuteMsg as PairExecuteMsg, QueryMsg as PairQueryMsg, Token, TokenInfo};
 use packages::router::InstantiateMsg as RouterInstantiate;
 
 fn mock_app() -> App {

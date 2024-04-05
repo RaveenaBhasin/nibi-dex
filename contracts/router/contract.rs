@@ -2,11 +2,12 @@ use crate::state::CONFIG;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
-use packages::router::{Config, ExecuteMsg, InstantiateMsg, QueryMsg};
+use packages::router::{Config, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
+use cw2::set_contract_version;
 
 // version info for migration info
-const _CONTRACT_NAME: &str = "crates.io:nibiru-hack";
-const _CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
+const CONTRACT_NAME: &str = "nibi-dex";
+const CONTRACT_VERSION: &str = "0.1.0";
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -15,6 +16,7 @@ pub fn instantiate(
     _info: MessageInfo,
     msg: InstantiateMsg,
 ) -> StdResult<Response> {
+    set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
     let config: Config = Config {
         factory_addr: msg.factory_addr,
     };
@@ -46,4 +48,17 @@ pub mod query {
     pub fn get_factory_addr(_deps: Deps) -> StdResult<Config> {
         Ok(CONFIG.load(_deps.storage).unwrap())
     }
+}
+
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn migrate(deps: DepsMut, env: Env, _msg: MigrateMsg) -> StdResult<Response> {
+    let info_str: String = format!(
+        "migrating contract: {}, new_contract_version: {}, contract_name: {}",
+        env.contract.address,
+        CONTRACT_VERSION.to_string(),
+        CONTRACT_NAME.to_string()
+    );
+    deps.api.debug(&info_str);
+    set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+    Ok(Response::default())
 }
