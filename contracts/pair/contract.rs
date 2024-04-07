@@ -10,6 +10,7 @@ const _CONTRACT_NAME: &str = "crates.io:nibiru-hack";
 const _CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 use crate::execute_pt::execute;
 use crate::query_pt::query;
+use packages::pair::Token;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -77,6 +78,16 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
                     err
                 ))),
             }
+        }
+        QueryMsg::GetLpTokenAmount { assets } => {
+            to_binary(&query::query_lp_token_amount(deps, assets)?)
+        }
+        QueryMsg::GetAmountOut {
+            from_token,
+            to_token,
+            amount_in,
+        } => {
+            todo!()
         }
     }
 }

@@ -62,7 +62,26 @@ pub struct PairInfo {
 pub enum QueryMsg {
     #[returns(PairInfo)]
     PoolInfo {},
+
     #[returns(CW20QueryMsg)]
     TokenQuery(CW20QueryMsg),
-}
 
+    #[returns(u128)]
+    GetLpTokenAmount { assets: [Token; 2] },
+
+    #[returns(u128)]
+    GetAmountOut {
+        from_token: TokenInfo,
+        to_token: TokenInfo,
+        amount_in: u128,
+    },
+
+    #[returns([Token; 2])]
+    GetTokenAmountFromLp { lp_amount: u128 },
+
+    #[returns(Uint128)]
+    GetReserves0 {},
+
+    #[returns(Uint128)]
+    GetReserves1 {},
+}

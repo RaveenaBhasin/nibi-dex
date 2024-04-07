@@ -1,5 +1,0 @@
-054494c0c9b7c1fb9519be49f33fc39fd9f2430da97aec5e3cf9f9619a1f2ebb  /target/wasm32-unknown-unknown/release/cw20_base.wasm
-4c1462fa4ff82a55a440250d57920db4f70cfe1d2e76f9cdec8cff6f36fd0304  /target/wasm32-unknown-unknown/release/factory.wasm
-800b2eef1a6bada8a96d04f5524db4b4c47eb517f234b81947a8dea6dfa74428  /target/wasm32-unknown-unknown/release/packages.wasm
-d780c4d58ab61d315181bc0ccfd69295cf81eacad7923b5702cf35383318e385  /target/wasm32-unknown-unknown/release/pair.wasm
-e49bea36787628bad4402c49efc0dd983f5b90343ac1719f9e70202baf0b8552  /target/wasm32-unknown-unknown/release/router.wasm

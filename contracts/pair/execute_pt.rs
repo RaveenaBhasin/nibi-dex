@@ -49,6 +49,10 @@ pub mod execute {
         //     amount: Uint128::from(tok)
         // }])
 
+        // let expected_sent_fund = Coin{
+        //     denom:
+        // }
+
         let mut res = Response::new();
         match &from_token {
             TokenInfo::CW20Token { contract_addr } => {
@@ -63,7 +67,20 @@ pub mod execute {
                 });
                 res = res.add_message(asset_transfer);
             }
-            TokenInfo::NativeToken { denom: _denom } => {}
+            TokenInfo::NativeToken { denom: _denom } => {
+                let sent_fund = info
+                    .funds
+                    .get(0)
+                    .ok_or_else(|| StdError::generic_err("No funds sent"))
+                    .unwrap();
+                println!("Sent fund {:?}", sent_fund);
+                if sent_fund.clone().amount.u128() < amount_in {
+                    return Err(StdError::generic_err("Insufficient funds sent"))
+                };
+                if sent_fund.denom != "unibi".to_string() {
+                    return Err(StdError::generic_err("Invalid denomination"));
+                };
+            }
         };
 
         let amount_out = calculate_swap_amount(deps, env, from_token, to_token.clone(), amount_in)?;
@@ -125,10 +142,12 @@ pub mod execute {
         // (x * y) / (x+a) = (y-b)
         // (x * y) / (x+a) + b = y
         // b = y - ( (x * y) / (x+a) )
-        let amount_out = token_balances[1].u128()
-            - (token_balances[1] * token_balances[0]).u128()
-                / (token_balances[0].u128() + amount_in);
+        // let amount_out = token_balances[1].u128()
+        //     - (token_balances[1] * token_balances[0]).u128()
+        //         / (token_balances[0].u128() + amount_in);
 
+        let swap_fees = 1/1000;
+        let amount_out = (token_balances[1].u128()*(1-swap_fees)*amount_in)/(token_balances[0].u128() + ((1-swap_fees)*amount_in));
         println!(
             "Logging inside contract swap function{:?} {:?} {:?} ",
             assets, amount_out, token_balances

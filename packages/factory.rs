@@ -4,6 +4,7 @@ use cosmwasm_schema::{cw_serde, QueryResponses};
 #[cw_serde]
 pub struct PoolInfo {
     pub pair_addr: String,
+    // pub fee_tier: Uint256,
     pub assets: [TokenInfo; 2],
 }
 

@@ -418,12 +418,16 @@ fn swap_token_test() {
             Addr::unchecked("user"),
             Addr::unchecked(pair_contract_addr.clone()),
             &PairExecuteMsg::SwapAsset {
-                from_token: token_info_1.clone(),
-                to_token: token_info_2.clone(),
+                from_token: token_info_2.clone(),
+                to_token: token_info_1.clone(),
                 amount_in: 10u128,
-                min_amount_out: 8u128,
+                min_amount_out: 5u128,
             },
-            &[],
+            // &[]
+            &vec![Coin {
+                amount: Uint128::from(10u128),
+                denom: "unibi".to_string(),
+            }],
         )
         .unwrap();
 
