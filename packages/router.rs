@@ -43,3 +43,6 @@ pub enum QueryResponse {
     FactoryAddr { factory_addr: String },
 }
 
+
+#[cw_serde]
+pub struct MigrateMsg {}

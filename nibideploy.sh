@@ -47,13 +47,15 @@ echo "✅ Build successful!........Enjoy 🚀"
 # echo "✅ Optimized!........Enjoy 🚀"
 
 # CHAIN_ID=nibiru-itn-1
-CHAIN_ID=nibiru-testnet-1
+# CHAIN_ID=nibiru-testnet-1
+CHAIN_ID=nibiru-testnet-2
 echo "Now using chain id $CHAIN_ID...🟡"
 
 nibid config broadcast-mode sync
 
 # RPC="https://rpc.itn-1.nibiru.fi:443"
-RPC="https://rpc.testnet-1.nibiru.fi:443"
+# RPC="https://rpc.testnet-1.nibiru.fi:443"
+RPC="https://rpc.testnet-2.nibiru.fi:443"
 NIBI=00unibi
 # TXFLAG="--chain-id $CHAIN_ID --node $RPC --gas=1000000 --fees=250$NIBI --gas-adjustment 2"
 TXFLAG="--chain-id $CHAIN_ID --node $RPC --gas=10000000 --fees=2500$NIBI --gas-adjustment 2"
@@ -128,7 +130,7 @@ nibid tx wasm instantiate $CODE_ID "$INIT" --from $SAVED_ADDRESS --label "instan
 #                 }
 #             }
 #         ]
-#     }
+#     }    
 # }'
 # CONTRACT="nibi1he7d3m60ytqe3uu3wxfzrxpagm7zwn27yjyfy4u620h5jdq4pqksc5aj7v"
 # nibid tx wasm execute $CONTRACT "$CREATE_PAIR" --from $SAVED_ADDRESS $TXFLAG -y <<< "$(source ./../../.env && echo $NIBI_KEY)"
@@ -192,24 +194,26 @@ nibid tx wasm instantiate $CODE_ID "$INIT" --from $SAVED_ADDRESS --label "instan
 # CONTRACT="nibi1jfuzdxd92h66z5g0k4ewgyl5lfzj7d9k089aqfn4tk68hd83ne2q2v8ump"
 # nibid tx wasm execute $CONTRACT "$ADD_LIQ" --from $SAVED_ADDRESS $TXFLAG -y <<< "$(source ./../../.env && echo $NIBI_KEY)"
 
-# SWAP='{
-#     "swap_asset": {
-#         "from_token": {
-#             "c_w20_token": {
-#                 "contract_addr":"nibi1v3r5utz4uhpu74ua4y6nr57y8yvpcdsmgm238q3f5qp259lgkytsmej6x0"
-#             }
-#         },
-#         "to_token": {
-#             "native_token": {
-#                 "denom": "unibi"
-#             }
-#         },
-#         "amount_in": "10",
-#         "min_amount_out": "1"
-#     }
-# }'
-# CONTRACT="nibi1jfuzdxd92h66z5g0k4ewgyl5lfzj7d9k089aqfn4tk68hd83ne2q2v8ump"
-# nibid tx wasm execute $CONTRACT "$SWAP" --from $SAVED_ADDRESS $TXFLAG -y <<<"$(source ./../../.env && echo $NIBI_KEY)"
+
+SWAP='{
+    "swap_asset": {
+        "from_token": {
+            "c_w20_token": {
+                "contract_addr":"nibi1v3r5utz4uhpu74ua4y6nr57y8yvpcdsmgm238q3f5qp259lgkytsmej6x0"
+            }
+        },
+        "to_token": {   
+            "native_token": {
+                "denom": "unibi"
+            }
+        }, 
+        "amount_in": "10",
+        "min_amount_out": "1"
+    }
+}'
+CONTRACT="nibi1jfuzdxd92h66z5g0k4ewgyl5lfzj7d9k089aqfn4tk68hd83ne2q2v8ump"
+nibid tx wasm execute $CONTRACT "$SWAP" --from $SAVED_ADDRESS $TXFLAG -y <<< "$(source ./../../.env && echo $NIBI_KEY)"
+
 
 # QUERY_ALLOWANCE='{
 #     "allowance": {
