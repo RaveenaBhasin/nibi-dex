@@ -79,14 +79,23 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
                 ))),
             }
         }
-        QueryMsg::GetLpTokenAmount { assets } => {
-            to_binary(&query::query_lp_token_amount(deps, assets)?)
+        QueryMsg::GetEstimatedLpAmount { assets } => {
+            to_binary(&query::query_lp_token_amount(deps, env, assets)?)
+        }
+        QueryMsg::GetEstimatedTokenAmounts { lp_amount } => {
+            todo!()
         }
         QueryMsg::GetAmountOut {
             from_token,
             to_token,
             amount_in,
         } => {
+            todo!()
+        }
+        QueryMsg::GetReserves0 {} => {
+            todo!()
+        }
+        QueryMsg::GetReserves1 {} => {
             todo!()
         }
     }

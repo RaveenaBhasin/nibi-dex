@@ -67,7 +67,7 @@ pub enum QueryMsg {
     TokenQuery(CW20QueryMsg),
 
     #[returns(u128)]
-    GetLpTokenAmount { assets: [Token; 2] },
+    GetEstimatedLpAmount { assets: [Token; 2] },
 
     #[returns(u128)]
     GetAmountOut {
@@ -77,7 +77,7 @@ pub enum QueryMsg {
     },
 
     #[returns([Token; 2])]
-    GetTokenAmountFromLp { lp_amount: u128 },
+    GetEstimatedTokenAmounts { lp_amount: u128 },
 
     #[returns(Uint128)]
     GetReserves0 {},

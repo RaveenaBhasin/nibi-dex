@@ -1,5 +1,5 @@
 use crate::state::PAIR_INFO;
-use cosmwasm_std::{to_binary, Deps, StdError, StdResult};
+use cosmwasm_std::{to_binary, Deps, StdResult};
 use cw20::BalanceResponse as CW20_BalanceResponse;
 use packages::pair::PairInfo;
 // version info for migration info
@@ -12,7 +12,7 @@ pub mod query {
     use super::*;
     use cosmwasm_std::{
         Addr, AllBalanceResponse, BalanceResponse, BankQuery, Coin, CosmosMsg, Empty, Env,
-        MessageInfo, QuerierWrapper, QueryRequest, Uint128, WasmMsg, WasmQuery,
+        QuerierWrapper, QueryRequest, StdError, Uint128, WasmMsg, WasmQuery,
     };
     use cw20::{Cw20ExecuteMsg, Cw20QueryMsg, TokenInfoResponse};
     use cw20_base::state::TOKEN_INFO;
@@ -23,37 +23,13 @@ pub mod query {
         Ok(pair_info)
     }
 
-    pub fn query_lp_token_amount(
-        deps: Deps,
-        info: MessageInfo,
-        env: Env,
-        assets: [Token; 2],
-    ) -> StdResult<Uint128> {
+    pub fn query_lp_token_amount(deps: Deps, env: Env, assets: [Token; 2]) -> StdResult<Uint128> {
+        // check if the pair exists
         let pair_info: PairInfo = PAIR_INFO.load(deps.storage).unwrap();
         if !((assets[0].info == pair_info.assets[0] && assets[1].info == pair_info.assets[1])
             || (assets[0].info == pair_info.assets[1] && assets[1].info == pair_info.assets[0]))
         {
             return Err(StdError::generic_err("Pair does not exist"));
-        }
-
-        // transfer from both the asset amounts
-        let mut messages = vec![];
-        for (_i, asset) in assets.iter().enumerate() {
-            let _asset_transfer = match &asset.info {
-                TokenInfo::CW20Token { contract_addr } => {
-                    let asset_transfer: CosmosMsg<Empty> = CosmosMsg::Wasm(WasmMsg::Execute {
-                        contract_addr: contract_addr.to_string(),
-                        msg: to_binary(&Cw20ExecuteMsg::TransferFrom {
-                            owner: info.sender.into_string(),
-                            recipient: env.contract.address.to_string().clone(),
-                            amount: asset.amount,
-                        })?,
-                        funds: vec![],
-                    });
-                    messages.push(asset_transfer);
-                }
-                TokenInfo::NativeToken { denom: _denom } => {}
-            };
         }
 
         let mut token_balances = vec![];
@@ -62,22 +38,24 @@ pub mod query {
                 TokenInfo::CW20Token { contract_addr } => query::query_token_balance(
                     &deps.querier,
                     contract_addr.clone(),
-                    info.sender.clone(),
+                    env.contract.address.clone(),
                 )?,
                 TokenInfo::NativeToken { denom } => query::query_native_balance(
                     &deps.querier,
-                    info.sender.clone(),
+                    env.contract.address.clone(),
                     denom.to_string(),
                 )?,
             };
-            if token_bal == Uint128::from(0u128) {
-                return Err(StdError::generic_err(format!(
-                    "Balance found zero {:?}",
-                    asset.info
-                )));
-            }
+            //        if token_bal == Uint128::from(0u128) {
+            //            return Err(StdError::generic_err(format!(
+            //                "Balance found zero {:?}",
+            //                asset.info
+            //            )));
+            //        }
             token_balances.push(token_bal);
         }
+
+        println!("Token balances {:?}", token_balances);
 
         let asset0_value = assets[0].amount;
         let asset1_value = assets[1].amount;
@@ -99,8 +77,7 @@ pub mod query {
                 asset1_value.multiply_ratio(res.total_supply, token_balances[1]),
             );
         }
-
-        return Ok(liquidity_minted);
+        Ok(liquidity_minted)
     }
 
     pub fn _query_token_info(
@@ -121,7 +98,6 @@ pub mod query {
         account_addr: Addr,
         denom: String,
     ) -> StdResult<Uint128> {
-        // load price form the oracle
         let balance: BalanceResponse = querier.query(&QueryRequest::Bank(BankQuery::Balance {
             address: account_addr.to_string(),
             denom,

@@ -282,6 +282,26 @@ fn add_liquidity_test() {
     .unwrap();
     println!("Increased Allowance for Token1 \n",);
 
+    let get_liquidity_amt: Uint128 = app
+        .wrap()
+        .query_wasm_smart(
+            pair_contract_addr.clone(),
+            &PairQueryMsg::GetEstimatedLpAmount {
+                assets: [
+                    Token {
+                        info: token_info_1.clone(),
+                        amount: Uint128::from(100u128),
+                    },
+                    Token {
+                        info: token_info_2.clone(),
+                        amount: Uint128::from(100u128),
+                    },
+                ],
+            },
+        )
+        .unwrap();
+
+    println!("Getting liquidity amount {:?}", get_liquidity_amt);
     let add_liquidity_res = app
         .execute_contract(
             Addr::unchecked("user"),

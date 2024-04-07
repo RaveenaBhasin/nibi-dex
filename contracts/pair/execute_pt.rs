@@ -75,7 +75,7 @@ pub mod execute {
                     .unwrap();
                 println!("Sent fund {:?}", sent_fund);
                 if sent_fund.clone().amount.u128() < amount_in {
-                    return Err(StdError::generic_err("Insufficient funds sent"))
+                    return Err(StdError::generic_err("Insufficient funds sent"));
                 };
                 if sent_fund.denom != "unibi".to_string() {
                     return Err(StdError::generic_err("Invalid denomination"));
@@ -146,8 +146,9 @@ pub mod execute {
         //     - (token_balances[1] * token_balances[0]).u128()
         //         / (token_balances[0].u128() + amount_in);
 
-        let swap_fees = 1/1000;
-        let amount_out = (token_balances[1].u128()*(1-swap_fees)*amount_in)/(token_balances[0].u128() + ((1-swap_fees)*amount_in));
+        let swap_fees = 1 / 1000;
+        let amount_out = (token_balances[1].u128() * (1 - swap_fees) * amount_in)
+            / (token_balances[0].u128() + ((1 - swap_fees) * amount_in));
         println!(
             "Logging inside contract swap function{:?} {:?} {:?} ",
             assets, amount_out, token_balances
@@ -202,6 +203,7 @@ pub mod execute {
             return Err(StdError::generic_err("Pair does not exist"));
         }
 
+        println!("Transferring the tokens !!");
         // transfer from both the asset amounts
         let mut messages = vec![];
         for (_i, asset) in assets.iter().enumerate() {
@@ -222,26 +224,28 @@ pub mod execute {
             };
         }
 
+        println!("All tokens transferred successfully !!");
+
         let mut token_balances = vec![];
         for (_, asset) in assets.iter().enumerate() {
             let token_bal = match &asset.info {
                 TokenInfo::CW20Token { contract_addr } => query::query_token_balance(
                     &deps.querier,
                     contract_addr.clone(),
-                    info.sender.clone(),
+                    env.contract.address.clone(),
                 )?,
                 TokenInfo::NativeToken { denom } => query::query_native_balance(
                     &deps.querier,
-                    info.sender.clone(),
+                    env.contract.address.clone(),
                     denom.to_string(),
                 )?,
             };
-            if token_bal == Uint128::from(0u128) {
-                return Err(StdError::generic_err(format!(
-                    "Balance found zero {:?}",
-                    asset.info
-                )));
-            }
+            //            if token_bal == Uint128::from(0u128) {
+            //                return Err(StdError::generic_err(format!(
+            //                    "Balance found zero {:?}",
+            //                    asset.info
+            //                )));
+            //            }
             token_balances.push(token_bal);
         }
 
@@ -257,13 +261,14 @@ pub mod execute {
         };
 
         let liquidity_minted: Uint128;
+        println!("Token balances {:?}", token_balances);
         if res.total_supply == Uint128::from(0u128) {
             liquidity_minted = std::cmp::min(asset0_value, asset1_value);
         } else {
             liquidity_minted = std::cmp::min(
                 asset0_value.multiply_ratio(res.total_supply, token_balances[0]),
                 asset1_value.multiply_ratio(res.total_supply, token_balances[1]),
-            );
+            )
         }
 
         if liquidity_minted < min_liquidity {

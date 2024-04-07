@@ -6,7 +6,7 @@ use packages::factory::{
     ExecuteMsg as FactoryExecuteMsg, InstantiateMsg as FactoryInstantiate, PoolInfo,
     QueryMsg as FactoryQueryMsg,
 };
-use packages::pair::{ExecuteMsg as PairExecuteMsg, Token, TokenInfo};
+use packages::pair::{ExecuteMsg as PairExecuteMsg, QueryMsg as PairQueryMsg, Token, TokenInfo};
 use packages::router::InstantiateMsg as RouterInstantiate;
 
 fn mock_app() -> App {
@@ -289,6 +289,18 @@ fn add_liquidity_test() {
 
     println!("Increased Allowance for Token2 \n",);
 
+    let get_liquidity_amt: Uint128 = app
+        .wrap()
+        .query_wasm_smart(
+            contract_info.factory_contract_addr,
+            &PairQueryMsg::GetLpAmount {
+                asset_infos: [token_info_1.clone(), token_info_2.clone()],
+            },
+        )
+        .unwrap();
+
+    println!("Getting liquidity amount {:?}", get_liquidity_amt);
+
     let add_liquidity_res = app
         .execute_contract(
             Addr::unchecked("user"),
@@ -489,4 +501,3 @@ fn withdraw_liquidity() {
 
     println!("Withdraw Res: {:?}\n", withdraw_res);
 }
-
