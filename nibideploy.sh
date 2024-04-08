@@ -42,20 +42,20 @@ echo "Building for production...🟡"
 cargo wasm
 echo "✅ Build successful!........Enjoy 🚀"
 
-# echo "Optimizing wasm..."
-# cargo run-script optimize
-# echo "✅ Optimized!........Enjoy 🚀"
+echo "Optimizing wasm..."
+cargo-run-script optimize
+echo "✅ Optimized!........Enjoy 🚀"
 
 # CHAIN_ID=nibiru-itn-1
 # CHAIN_ID=nibiru-testnet-1
-CHAIN_ID=nibiru-testnet-2
+CHAIN_ID=nibiru-testnet-1
 echo "Now using chain id $CHAIN_ID...🟡"
 
 nibid config broadcast-mode sync
 
 # RPC="https://rpc.itn-1.nibiru.fi:443"
 # RPC="https://rpc.testnet-1.nibiru.fi:443"
-RPC="https://rpc.testnet-2.nibiru.fi:443"
+RPC="https://rpc.testnet-1.nibiru.fi:443"
 NIBI=00unibi
 # TXFLAG="--chain-id $CHAIN_ID --node $RPC --gas=1000000 --fees=250$NIBI --gas-adjustment 2"
 TXFLAG="--chain-id $CHAIN_ID --node $RPC --gas=10000000 --fees=2500$NIBI --gas-adjustment 2"
@@ -72,23 +72,22 @@ echo "PROJECT_NAME: $PROJECT_NAME, WASM_FILE: $WASM_FILE"
 
 getAddress
 
-# RES=$(nibid tx wasm store ./../../artifacts/$WASM_FILE --from $SAVED_ADDRESS $TXFLAG -y --output json -b sync <<<"$(source ./../../.env && echo $NIBI_KEY)")
-#
-# echo "RES: $RES"
-# echo "✅ wasm file uploaded on blockchain with $CHAIN_ID !........Enjoy 🚀"
-#
-# CODE_ID=$(echo $RES | jq -r '.logs[0].events[-1].attributes[-1].value')
-#
-# echo "✅ CODE_ID has been now generated: $CODE_ID"
+RES=$(nibid tx wasm store ./../../artifacts/$WASM_FILE --from $SAVED_ADDRESS $TXFLAG -y --output json -b sync <<<"$(source ./../../.env && echo $NIBI_KEY)")
 
-# CODE_ID=249
+echo "RES: $RES"
+echo "✅ wasm file uploaded on blockchain with $CHAIN_ID !........Enjoy 🚀"
+
+CODE_ID=$(echo $RES | jq -r '.logs[0].events[-1].attributes[-1].value')
+
+echo "✅ CODE_ID has been now generated: $CODE_ID"
+
+# CODE_ID=378
 # INIT='{
-#     "pair_code_id": 250
+#        "pair_code_id": 250
 # }'
-# nibid tx wasm instantiate $CODE_ID "$INIT" --from $SAVED_ADDRESS --label "instantiate factory" --no-admin $TXFLAG -y <<< "$(source ./../../.env && echo $NIBI_KEY)"
-#
+# nibid tx wasm instantiate $CODE_ID "$INIT" --from $SAVED_ADDRESS --label "instantiate factory" --admin $SAVED_ADDRESS $TXFLAG -y <<<"$(source ./../../.env && echo $NIBI_KEY)"
 
-# CODE_ID=251
+CODE_ID=379
 # INIT='{
 #
 
@@ -100,21 +99,21 @@ getAddress
 #
 #     "factory_addr": "nibi1he7d3m60ytqe3uu3wxfzrxpagm7zwn27yjyfy4u620h5jdq4pqksc5aj7v"
 # }'
-# nibid tx wasm instantiate $CODE_ID "$INIT" --from $SAVED_ADDRESS --label "instantiate router" --no-admin $TXFLAG -y <<< "$(source ./../../.env && echo $NIBI_KEY)"
+# nibid tx wasm instantiate $CODE_ID "$INIT" --from $SAVED_ADDRESS --label "instantiate router" --no-admin $TXFLAG -y <<<"$(source ./../../.env && echo $NIBI_KEY)"
 
-INIT='{
-     "name" : "USDT",
-     "symbol": "USDT",
-     "decimals": 6,
-     "initial_balances": [
-         {
-             "address": "nibi1e5lgey362kwkswas7khfvlqx9y70dhtkn7fq26",
-             "amount": "1000000000"
-         }
-     ]
- }'
-CODE_ID=349
-nibid tx wasm instantiate $CODE_ID "$INIT" --from $SAVED_ADDRESS --label "instantiate mock coin" --no-admin $TXFLAG -y <<<"$(source ./../../.env && echo $NIBI_KEY)"
+# nibid tx wasm migrate "nibi1uzvw6tfuzm668k3ysmps3ph3f7nq6ltwswammscwdz0klaf5zyysuwsyuh" $CODE_ID '{}' --from $SAVED_ADDRESS $TXFLAG -y <<<"$(source ./../../.env && echo $NIBI_KEY)"
+# INIT='{
+#      "name" : "USDT",
+#      "symbol": "USDT",
+#      "decimals": 6,
+#      "initial_balances": [
+#          {
+#              "address": "nibi1e5lgey362kwkswas7khfvlqx9y70dhtkn7fq26",
+#              "amount": "1000000000"
+#          }
+#      ]
+#  CODE_ID=349
+# nibid tx wasm instantiate $CODE_ID "$INIT" --from $SAVED_ADDRESS --label "instantiate mock coin" --no-admin $TXFLAG -y <<<"$(source ./../../.env && echo $NIBI_KEY)"
 
 # CREATE_PAIR='{
 #     "create_new_pair": {
@@ -130,7 +129,7 @@ nibid tx wasm instantiate $CODE_ID "$INIT" --from $SAVED_ADDRESS --label "instan
 #                 }
 #             }
 #         ]
-#     }    
+#     }
 # }'
 # CONTRACT="nibi1he7d3m60ytqe3uu3wxfzrxpagm7zwn27yjyfy4u620h5jdq4pqksc5aj7v"
 # nibid tx wasm execute $CONTRACT "$CREATE_PAIR" --from $SAVED_ADDRESS $TXFLAG -y <<< "$(source ./../../.env && echo $NIBI_KEY)"
@@ -194,26 +193,24 @@ nibid tx wasm instantiate $CODE_ID "$INIT" --from $SAVED_ADDRESS --label "instan
 # CONTRACT="nibi1jfuzdxd92h66z5g0k4ewgyl5lfzj7d9k089aqfn4tk68hd83ne2q2v8ump"
 # nibid tx wasm execute $CONTRACT "$ADD_LIQ" --from $SAVED_ADDRESS $TXFLAG -y <<< "$(source ./../../.env && echo $NIBI_KEY)"
 
-
-SWAP='{
-    "swap_asset": {
-        "from_token": {
-            "c_w20_token": {
-                "contract_addr":"nibi1v3r5utz4uhpu74ua4y6nr57y8yvpcdsmgm238q3f5qp259lgkytsmej6x0"
-            }
-        },
-        "to_token": {   
-            "native_token": {
-                "denom": "unibi"
-            }
-        }, 
-        "amount_in": "10",
-        "min_amount_out": "1"
-    }
-}'
-CONTRACT="nibi1jfuzdxd92h66z5g0k4ewgyl5lfzj7d9k089aqfn4tk68hd83ne2q2v8ump"
-nibid tx wasm execute $CONTRACT "$SWAP" --from $SAVED_ADDRESS $TXFLAG -y <<< "$(source ./../../.env && echo $NIBI_KEY)"
-
+# SWAP='{
+#     "swap_asset": {
+#         "from_token": {
+#             "c_w20_token": {
+#                 "contract_addr":"nibi1v3r5utz4uhpu74ua4y6nr57y8yvpcdsmgm238q3f5qp259lgkytsmej6x0"
+#             }
+#         },
+#         "to_token": {
+#             "native_token": {
+#                 "denom": "unibi"
+#             }
+#         },
+#         "amount_in": "10",
+#         "min_amount_out": "1"
+#     }
+# }'
+# CONTRACT="nibi1jfuzdxd92h66z5g0k4ewgyl5lfzj7d9k089aqfn4tk68hd83ne2q2v8ump"
+# nibid tx wasm execute $CONTRACT "$SWAP" --from $SAVED_ADDRESS $TXFLAG -y <<<"$(source ./../../.env && echo $NIBI_KEY)"
 
 # QUERY_ALLOWANCE='{
 #     "allowance": {

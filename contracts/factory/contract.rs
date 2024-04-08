@@ -1,4 +1,4 @@
-use crate::state::{FactoryConfig, TmpPoolInfo, FACTORY_CONFIG, TEMP_POOL_INFO};
+use crate::state::{FactoryConfig, TmpPoolInfo, FACTORY_CONFIG, OWNER, TEMP_POOL_INFO};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
@@ -6,24 +6,27 @@ use cosmwasm_std::{
     StdError, StdResult, SubMsg, WasmMsg,
 };
 use cw0::*;
+use cw2::set_contract_version;
 use cw20::{Cw20ExecuteMsg, MinterResponse};
-use packages::factory::{ExecuteMsg, InstantiateMsg, PoolInfo, QueryMsg};
+use packages::factory::{ExecuteMsg, InstantiateMsg, PoolInfo, QueryMsg, MigrateMsg};
 use packages::pair::{ExecuteMsg as ExecutePairMsg, InstantiateMsg as InstantiatePairMsg};
+
 // version info for migration info
-// const CONTRACT_NAME: &str = "crates.io:nibiru-hack";
-// const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
+const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
+const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
     deps: DepsMut,
     _env: Env,
-    _info: MessageInfo,
+    info: MessageInfo,
     msg: InstantiateMsg,
 ) -> StdResult<Response> {
     let factory_config = FactoryConfig {
         pair_code_id: msg.pair_code_id,
     };
     FACTORY_CONFIG.save(deps.storage, &factory_config).unwrap();
+    OWNER.save(deps.storage, &info.sender).unwrap();
     Ok(Response::new())
 }
 
@@ -80,7 +83,7 @@ pub mod execute {
         let instantiate_pair = CosmosMsg::Wasm(WasmMsg::Instantiate {
             code_id: factory_config.pair_code_id,
             funds: vec![],
-            admin: Some(env.contract.address.to_string()),
+            admin: Some(OWNER.load(deps.storage).unwrap().into_string()),
             label: "pair contract".to_string(),
             msg: to_binary(&InstantiatePairMsg {
                 token_info: asset_infos,
@@ -109,10 +112,12 @@ pub mod execute {
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Pair { asset_infos } => to_binary(&query::pool_info(deps, asset_infos)?),
+        QueryMsg::GetOwner {} => to_binary(&query::get_owner(deps)?),
     }
 }
 
 pub mod query {
+    use cosmwasm_std::Addr;
     use packages::pair::TokenInfo;
 
     use crate::state::POOL_ID_TO_POOL_INFO;
@@ -126,6 +131,10 @@ pub mod query {
         asset_in_bytes.sort();
         let pair_id = asset_in_bytes.concat();
         Ok(POOL_ID_TO_POOL_INFO.load(_deps.storage, &pair_id)?)
+    }
+
+    pub fn get_owner(deps: Deps) -> StdResult<Addr> {
+        Ok(OWNER.load(deps.storage).unwrap())
     }
 }
 
@@ -177,4 +186,17 @@ pub mod reply {
             reply_on: ReplyOn::Success,
         }))
     }
+}
+
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn migrate(deps: DepsMut, env: Env, _msg: MigrateMsg) -> StdResult<Response> {
+    let info_str: String = format!(
+        "migrating contract: {}, new_contract_version: {}, contract_name: {}",
+        env.contract.address,
+        CONTRACT_VERSION.to_string(),
+        CONTRACT_NAME.to_string()
+    );
+    deps.api.debug(&info_str);
+    set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+    Ok(Response::default())
 }
