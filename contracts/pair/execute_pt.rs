@@ -1,21 +1,26 @@
 use crate::state::PAIR_INFO;
 #[cfg(not(feature = "library"))]
-use cosmwasm_std::{to_binary, DepsMut, Env, MessageInfo, Response, StdError, StdResult};
+use cosmwasm_std::{
+    to_binary, Decimal256, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult, Uint128,
+};
 use cw20::Cw20ExecuteMsg;
 use packages::pair::PairInfo;
 
 // version info for migration info
 const _CONTRACT_NAME: &str = "crates.io:nibiru-hack";
 const _CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
+const FEE_SCALING_FACTOR: Uint128 = Uint128::new(10_000);
 use crate::query_pt::query;
 
 pub mod execute {
 
-    use cosmwasm_std::{BankMsg, Coin, CosmosMsg, Decimal256, Empty, Uint128, WasmMsg};
+    use cosmwasm_std::{Addr, BankMsg, Coin, CosmosMsg, Empty, Uint128, WasmMsg};
     use cw20_base::{
         state::{BALANCES, TOKEN_INFO},
         ContractError,
     };
+
+    use crate::state::FEES;
 
     use super::*;
     use packages::pair::{Token, TokenInfo};
@@ -83,8 +88,29 @@ pub mod execute {
             }
         };
 
-        let amount_out = calculate_swap_amount(deps, env, from_token, to_token.clone(), amount_in)?;
+        let amount_out = calculate_swap_amount(
+            deps.as_ref(),
+            env,
+            info.clone(),
+            from_token.clone(),
+            to_token.clone(),
+            amount_in,
+        )?;
         println!("Amount out {:?}", amount_out);
+
+        let mut msgs: Vec<CosmosMsg> = vec![];
+
+        let fees = FEES.load(deps.storage)?;
+        let protocol_fees_amount =
+            get_protocol_fees(Uint128::from(amount_in), fees.protocol_fee_percent);
+        if !protocol_fees_amount.is_zero() {
+            msgs.push(get_fee_transfer_msg(
+                &info.sender,
+                &fees.protocol_fee_recipient,
+                from_token.clone(),
+                protocol_fees_amount,
+            )?)
+        }
 
         if amount_out < min_amount_out {
             return Err(StdError::generic_err("Insufficient amount out"));
@@ -108,13 +134,15 @@ pub mod execute {
                 }],
             }),
         };
+        msgs.push(token_transfer);
 
-        Ok(res.add_message(token_transfer))
+        Ok(res.add_messages(msgs))
     }
 
     fn calculate_swap_amount(
-        deps: DepsMut,
+        deps: Deps,
         env: Env,
+        _info: MessageInfo,
         from_token: TokenInfo,
         to_token: TokenInfo,
         amount_in: u128,
@@ -137,6 +165,7 @@ pub mod execute {
             };
             token_balances.push(token_bal);
         }
+        let amount_in = Uint128::from(amount_in);
 
         // x * y = k = (x+a) * (y-b)
         // (x * y) / (x+a) = (y-b)
@@ -146,14 +175,29 @@ pub mod execute {
         //     - (token_balances[1] * token_balances[0]).u128()
         //         / (token_balances[0].u128() + amount_in);
 
-        let swap_fees = 1 / 1000;
-        let amount_out = (token_balances[1].u128() * (1 - swap_fees) * amount_in)
-            / (token_balances[0].u128() + ((1 - swap_fees) * amount_in));
+        // let protocol_fees_amount= (amount_in
+        //     .full_mul(fees.protocol_fee_percent)
+        //     .checked_div(Uint256::from(FEE_SCALING_FACTOR)))?;
+        // let lp_fees_amount: Uint128 = (Uint128::from(amount_in)
+        //     .full_mul(fees.lp_fee_percent)
+        //     .checked_div(Uint256::from(FEE_SCALING_FACTOR)))
+        // .into()?;
+        // let protocol_fees_amount = amount_in * (fees.protocol_fee_percent) / (FEE_SCALING_FACTOR);
+        let fees = FEES.load(deps.storage)?;
+        let protocol_fees_amount = get_protocol_fees(amount_in, fees.protocol_fee_percent);
+        let lp_fees_amount = amount_in * (fees.lp_fee_percent) / (FEE_SCALING_FACTOR);
+
+        let amount_out = (token_balances[1] * (amount_in - protocol_fees_amount - lp_fees_amount))
+            / (token_balances[0] + (amount_in - protocol_fees_amount - lp_fees_amount));
         println!(
             "Logging inside contract swap function{:?} {:?} {:?} ",
             assets, amount_out, token_balances
         );
-        Ok(amount_out)
+        Ok(amount_out.u128())
+    }
+
+    pub fn get_protocol_fees(amount_in: Uint128, fee_percent: Uint128) -> Uint128 {
+        amount_in * (fee_percent) / (FEE_SCALING_FACTOR)
     }
 
     pub fn execute_mint(
@@ -186,6 +230,57 @@ pub mod execute {
             .add_attribute("to", recipient)
             .add_attribute("amount", amount);
         Ok(res)
+    }
+
+    fn get_cw20_transfer_msg(
+        owner: &Addr,
+        recipient: &Addr,
+        token_addr: &Addr,
+        token_amount: Uint128,
+    ) -> StdResult<CosmosMsg> {
+        let transfer_cw20_msg = Cw20ExecuteMsg::TransferFrom {
+            owner: owner.into(),
+            recipient: recipient.into(),
+            amount: token_amount,
+        };
+        let exec_cw20_transfer = WasmMsg::Execute {
+            contract_addr: token_addr.into(),
+            msg: to_binary(&transfer_cw20_msg)?,
+            funds: vec![],
+        };
+        let cw20_transfer_cosmos_msg: CosmosMsg = exec_cw20_transfer.into();
+        Ok(cw20_transfer_cosmos_msg)
+    }
+
+    fn get_bank_transfer_msg(
+        recipient: &Addr,
+        denom: &str,
+        native_amount: Uint128,
+    ) -> StdResult<CosmosMsg> {
+        let transfer_bank_msg = cosmwasm_std::BankMsg::Send {
+            to_address: recipient.into(),
+            amount: vec![Coin {
+                denom: denom.to_string(),
+                amount: native_amount,
+            }],
+        };
+
+        let transfer_bank_cosmos_msg: CosmosMsg = transfer_bank_msg.into();
+        Ok(transfer_bank_cosmos_msg)
+    }
+
+    fn get_fee_transfer_msg(
+        sender: &Addr,
+        recipient: &Addr,
+        from_token: TokenInfo,
+        amount: Uint128,
+    ) -> StdResult<CosmosMsg> {
+        match from_token {
+            TokenInfo::CW20Token { contract_addr } => {
+                get_cw20_transfer_msg(sender, recipient, &contract_addr, amount)
+            }
+            TokenInfo::NativeToken { denom } => get_bank_transfer_msg(sender, &denom, amount),
+        }
     }
 
     pub fn add_liquidity(

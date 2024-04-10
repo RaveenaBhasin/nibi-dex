@@ -1,6 +1,6 @@
 use cosmwasm_schema::cw_serde;
 use cosmwasm_schema::QueryResponses;
-use cosmwasm_std::{Addr, Uint128};
+use cosmwasm_std::{Addr, Uint128, Decimal};
 use cw20_base::msg::ExecuteMsg as Cw20ExecuteMsg;
 use cw20_base::msg::InstantiateMsg as Cw20InstantiateMsg;
 use cw20_base::msg::QueryMsg as CW20QueryMsg;
@@ -25,6 +25,14 @@ pub struct InstantiateMsg {
     pub token_info: [TokenInfo; 2],
     pub lp_token_decimal: u8,
     pub cw20_instantiate: Cw20InstantiateMsg,
+    pub fees: Fees
+}
+
+#[cw_serde]
+pub struct Fees {
+    pub protocol_fee_recipient: Addr,
+    pub protocol_fee_percent: Uint128,
+    pub lp_fee_percent: Uint128
 }
 
 #[cw_serde]

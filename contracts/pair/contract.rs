@@ -1,16 +1,16 @@
-use crate::state::PAIR_INFO;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdError, StdResult,
+    to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdError, StdResult, Uint128,
 };
-use packages::pair::{ExecuteMsg, InstantiateMsg, PairInfo, QueryMsg};
+use packages::pair::{ExecuteMsg, InstantiateMsg, PairInfo, QueryMsg, Fees};
+use crate::state::{FEES, PAIR_INFO};
+use crate::execute_pt::execute;
+use crate::query_pt::query;
+
 // version info for migration info
 const _CONTRACT_NAME: &str = "crates.io:nibiru-hack";
 const _CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
-use crate::execute_pt::execute;
-use crate::query_pt::query;
-use packages::pair::Token;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -24,6 +24,12 @@ pub fn instantiate(
         lp_token_decimal: msg.lp_token_decimal,
     };
     PAIR_INFO.save(deps.storage, &pair_info)?;
+    let fees = Fees {
+        lp_fee_percent: msg.fees.lp_fee_percent, //30
+        protocol_fee_percent: msg.fees.protocol_fee_percent, //10
+        protocol_fee_recipient: msg.fees.protocol_fee_recipient,
+    };
+    FEES.save(deps.storage, &fees)?;
     cw20_base::contract::instantiate(deps, env, _info, msg.cw20_instantiate).unwrap();
     Ok(Response::new())
 }
