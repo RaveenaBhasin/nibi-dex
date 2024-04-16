@@ -57,8 +57,8 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
             min_liquidity_amt,
         } => execute::add_liquidity(deps, env, info, assets, min_liquidity_amt),
 
-        ExecuteMsg::RemoveLiquidity { lp_token } => {
-            execute::withdraw_liquidity(deps, env, info, lp_token)
+        ExecuteMsg::RemoveLiquidity { lp_token_amount } => {
+            execute::withdraw_liquidity(deps, env, info, lp_token_amount)
         }
 
         ExecuteMsg::TokenExecute(token_execute_msg) => {
@@ -89,8 +89,8 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::GetEstimatedLpAmount { assets } => {
             to_binary(&query::query_lp_token_amount(deps, env, assets)?)
         }
-        QueryMsg::GetEstimatedTokenAmounts { lp_amount } => {
-            to_binary(&query::query_estimated_token_amounts(deps, env, lp_amount)?)
+        QueryMsg::GetEstimatedTokenAmounts { lp_token_amount } => {
+            to_binary(&query::query_estimated_token_amounts(deps, env, lp_token_amount)?)
         }
         QueryMsg::GetAmountOut {
             from_token,
@@ -100,10 +100,10 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
             to_binary(&query::query_amount_out(deps, env, from_token, to_token, amount_in)?)
         }
         QueryMsg::GetReserves0 {} => {
-            todo!()
+            to_binary(&query::query_reserves_0(deps, env)?)
         }
         QueryMsg::GetReserves1 {} => {
-            todo!()
+            to_binary(&query::query_reserves_1(deps, env)?)
         }
     }
 }

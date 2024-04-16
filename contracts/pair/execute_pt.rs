@@ -155,8 +155,8 @@ pub mod execute {
                 )?,
                 TokenInfo::NativeToken { denom } => query::query_native_balance(
                     &deps.querier,
-                    this_address.clone(),
                     denom.to_string(),
+                    this_address.clone(),
                 )?,
             };
             token_balances.push(token_bal);
@@ -327,8 +327,8 @@ pub mod execute {
                 )?,
                 TokenInfo::NativeToken { denom } => query::query_native_balance(
                     &deps.querier,
-                    env.contract.address.clone(),
                     denom.to_string(),
+                    env.contract.address.clone(),
                 )?,
             };
             //            if token_bal == Uint128::from(0u128) {
@@ -391,48 +391,12 @@ pub mod execute {
         deps: DepsMut,
         env: Env,
         info: MessageInfo,
-        lp_token: Token,
+        lp_token_amount: Uint128,
     ) -> StdResult<Response> {
-        let this_address = env.contract.address.clone();
-
         let pair_info: PairInfo = PAIR_INFO.load(deps.storage).unwrap();
-        let token_info = TOKEN_INFO.load(deps.storage)?;
-        let res = cw20::TokenInfoResponse {
-            name: token_info.name,
-            symbol: token_info.symbol,
-            decimals: token_info.decimals,
-            total_supply: token_info.total_supply,
-        };
+        let assets_returned = query::query_estimated_token_amounts(deps.as_ref(), env.clone(), lp_token_amount)?;
 
-        let _ratio = Decimal256::from_ratio(lp_token.amount, res.total_supply);
-
-        let mut token_balances = vec![];
-        for (_, asset) in pair_info.assets.iter().enumerate() {
-            let token_bal = match &asset {
-                TokenInfo::CW20Token { contract_addr } => query::query_token_balance(
-                    &deps.querier,
-                    contract_addr.clone(),
-                    this_address.clone(),
-                )?,
-                TokenInfo::NativeToken { denom } => query::query_native_balance(
-                    &deps.querier,
-                    this_address.clone(),
-                    denom.to_string(),
-                )?,
-            };
-            token_balances.push(token_bal);
-        }
-
-        let assets_returned = [
-            lp_token
-                .amount
-                .multiply_ratio(token_balances[0], res.total_supply),
-            lp_token
-                .amount
-                .multiply_ratio(token_balances[1], res.total_supply),
-        ];
-
-        cw20_base::contract::execute_burn(deps, env, info.clone(), lp_token.amount).unwrap();
+        cw20_base::contract::execute_burn(deps, env, info.clone(), lp_token_amount).unwrap();
 
         let mut messages = vec![];
         for (i, asset) in pair_info.assets.iter().enumerate() {
@@ -442,7 +406,7 @@ pub mod execute {
                         contract_addr: contract_addr.to_string(),
                         msg: to_binary(&Cw20ExecuteMsg::Transfer {
                             recipient: info.sender.clone().to_string(),
-                            amount: assets_returned[i],
+                            amount: assets_returned[i].amount,
                         })?,
                         funds: vec![],
                     });
@@ -453,7 +417,7 @@ pub mod execute {
                         to_address: info.sender.to_string().clone(),
                         amount: vec![Coin {
                             denom: denom.to_string().clone(),
-                            amount: assets_returned[i],
+                            amount: assets_returned[i].amount,
                         }],
                     });
                     messages.push(native_asset_transfer);
@@ -465,7 +429,7 @@ pub mod execute {
             ("action", "withdraw liquidity"),
             (
                 "Assets returned",
-                &format!("{}, {}", assets_returned[0], assets_returned[1]),
+                &format!("{}, {}", assets_returned[0].amount, assets_returned[1].amount),
             ),
         ]))
     }

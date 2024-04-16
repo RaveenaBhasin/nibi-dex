@@ -7,16 +7,16 @@ const _CONTRACT_NAME: &str = "crates.io:nibiru-hack";
 const _CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 pub mod query {
-    use std::u128;
     use super::*;
+    use crate::execute_pt::execute::calculate_swap_amount;
     use cosmwasm_std::{
-        Addr, AllBalanceResponse, BalanceResponse, BankQuery, Coin, Env,
-        QuerierWrapper, QueryRequest, StdError, Uint128, WasmQuery,
+        Addr, AllBalanceResponse, BalanceResponse, BankQuery, Coin, Env, QuerierWrapper,
+        QueryRequest, StdError, Uint128, WasmQuery,
     };
     use cw20::{Cw20QueryMsg, TokenInfoResponse};
     use cw20_base::state::TOKEN_INFO;
     use packages::pair::{Token, TokenInfo};
-    use crate::execute_pt::execute::calculate_swap_amount;
+    use std::u128;
 
     pub fn query_pair_info(deps: Deps) -> StdResult<PairInfo> {
         let pair_info: PairInfo = PAIR_INFO.load(deps.storage).unwrap();
@@ -42,8 +42,8 @@ pub mod query {
                 )?,
                 TokenInfo::NativeToken { denom } => query::query_native_balance(
                     &deps.querier,
-                    env.contract.address.clone(),
                     denom.to_string(),
+                    env.contract.address.clone(),
                 )?,
             };
             //        if token_bal == Uint128::from(0u128) {
@@ -81,11 +81,11 @@ pub mod query {
     }
 
     pub fn query_amount_out(
-        deps: Deps, 
+        deps: Deps,
         env: Env,
         from_token: TokenInfo,
         to_token: TokenInfo,
-        amount_in: u128
+        amount_in: u128,
     ) -> StdResult<u128> {
         let amount_out = calculate_swap_amount(deps, env, from_token, to_token, amount_in).unwrap();
         Ok(amount_out)
@@ -106,8 +106,8 @@ pub mod query {
 
     pub fn query_native_balance(
         querier: &QuerierWrapper,
-        account_addr: Addr,
         denom: String,
+        account_addr: Addr,
     ) -> StdResult<Uint128> {
         let balance: BalanceResponse = querier.query(&QueryRequest::Bank(BankQuery::Balance {
             address: account_addr.to_string(),
@@ -147,9 +147,87 @@ pub mod query {
     pub fn query_estimated_token_amounts(
         deps: Deps,
         env: Env,
-        lp_amount: u128
+        lp_token_amount: Uint128,
     ) -> StdResult<[Token; 2]> {
-        
-        todo!()
+        let this_address = env.contract.address.clone();
+
+        let pair_info: PairInfo = PAIR_INFO.load(deps.storage).unwrap();
+        let token_info = TOKEN_INFO.load(deps.storage)?;
+        let res = cw20::TokenInfoResponse {
+            name: token_info.name,
+            symbol: token_info.symbol,
+            decimals: token_info.decimals,
+            total_supply: token_info.total_supply,
+        };
+
+        let mut estimated_tokens = vec![];
+
+        for (_, asset) in pair_info.assets.iter().enumerate() {
+            let reserve = match &asset {
+                TokenInfo::CW20Token { contract_addr } => query::query_token_balance(
+                    &deps.querier,
+                    contract_addr.clone(),
+                    this_address.clone(),
+                )?,
+                TokenInfo::NativeToken { denom } => query::query_native_balance(
+                    &deps.querier,
+                    denom.to_string(),
+                    this_address.clone(),
+                )?,
+            };
+
+            estimated_tokens.push(match &asset {
+                TokenInfo::CW20Token { contract_addr } => Token {
+                    info: TokenInfo::CW20Token {
+                        contract_addr: contract_addr.clone(),
+                    },
+                    amount: lp_token_amount.multiply_ratio(reserve, res.total_supply),
+                },
+                TokenInfo::NativeToken { denom } => Token {
+                    info: TokenInfo::NativeToken {
+                        denom: denom.clone(),
+                    },
+                    amount: lp_token_amount.multiply_ratio(reserve, res.total_supply),
+                },
+            });
+        }
+
+        let estimated_tokens_array: [Token; 2] =
+            [estimated_tokens[0].clone(), estimated_tokens[1].clone()];
+        Ok(estimated_tokens_array)
+    }
+
+    pub fn query_reserves_0(deps: Deps, env: Env) -> StdResult<Uint128> {
+        let pair_info: PairInfo = PAIR_INFO.load(deps.storage).unwrap();
+
+        Ok(match &pair_info.assets[0] {
+            TokenInfo::CW20Token { contract_addr } => query::query_token_balance(
+                &deps.querier,
+                contract_addr.clone(),
+                env.contract.address.clone(),
+            )?,
+            TokenInfo::NativeToken { denom } => query::query_native_balance(
+                &deps.querier,
+                denom.to_string(),
+                env.contract.address.clone(),
+            )?,
+        })
+    }
+
+    pub fn query_reserves_1(deps: Deps, env: Env) -> StdResult<Uint128> {
+        let pair_info: PairInfo = PAIR_INFO.load(deps.storage).unwrap();
+
+        Ok(match &pair_info.assets[1] {
+            TokenInfo::CW20Token { contract_addr } => query::query_token_balance(
+                &deps.querier,
+                contract_addr.clone(),
+                env.contract.address.clone(),
+            )?,
+            TokenInfo::NativeToken { denom } => query::query_native_balance(
+                &deps.querier,
+                denom.to_string(),
+                env.contract.address.clone(),
+            )?,
+        })
     }
 }

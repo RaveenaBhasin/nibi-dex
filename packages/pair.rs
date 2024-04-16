@@ -25,14 +25,14 @@ pub struct InstantiateMsg {
     pub token_info: [TokenInfo; 2],
     pub lp_token_decimal: u8,
     pub cw20_instantiate: Cw20InstantiateMsg,
-    pub treasury: Addr
+    pub treasury: Addr,
 }
 
 #[cw_serde]
 pub struct Fees {
     pub protocol_fee_recipient: Addr,
     pub protocol_fee_percent: Uint128,
-    pub lp_fee_percent: Uint128
+    pub lp_fee_percent: Uint128,
 }
 
 #[cw_serde]
@@ -54,7 +54,7 @@ pub enum ExecuteMsg {
         min_liquidity_amt: Uint128,
     },
     RemoveLiquidity {
-        lp_token: Token,
+        lp_token_amount: Uint128,
     },
     TokenExecute(Cw20ExecuteMsg),
 }
@@ -85,7 +85,7 @@ pub enum QueryMsg {
     },
 
     #[returns([Token; 2])]
-    GetEstimatedTokenAmounts { lp_amount: u128 },
+    GetEstimatedTokenAmounts { lp_token_amount: Uint128 },
 
     #[returns(Uint128)]
     GetReserves0 {},
@@ -93,7 +93,6 @@ pub enum QueryMsg {
     #[returns(Uint128)]
     GetReserves1 {},
 }
-
 
 #[cw_serde]
 pub struct MigrateMsg {}
