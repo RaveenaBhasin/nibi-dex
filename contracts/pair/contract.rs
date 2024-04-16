@@ -25,9 +25,9 @@ pub fn instantiate(
     };
     PAIR_INFO.save(deps.storage, &pair_info)?;
     let fees = Fees {
-        lp_fee_percent: msg.fees.lp_fee_percent, //30
-        protocol_fee_percent: msg.fees.protocol_fee_percent, //10
-        protocol_fee_recipient: msg.fees.protocol_fee_recipient,
+        lp_fee_percent: Uint128::from(30u32), 
+        protocol_fee_percent: Uint128::from(10u32), 
+        protocol_fee_recipient: msg.treasury,
     };
     FEES.save(deps.storage, &fees)?;
     cw20_base::contract::instantiate(deps, env, _info, msg.cw20_instantiate).unwrap();
