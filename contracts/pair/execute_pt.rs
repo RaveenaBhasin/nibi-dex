@@ -6,9 +6,6 @@ use cosmwasm_std::{
 use cw20::Cw20ExecuteMsg;
 use packages::pair::PairInfo;
 
-// version info for migration info
-const _CONTRACT_NAME: &str = "crates.io:nibiru-hack";
-const _CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 const FEE_SCALING_FACTOR: Uint128 = Uint128::new(10_000);
 use crate::query_pt::query;
 
@@ -58,7 +55,9 @@ pub mod execute {
         //     denom:
         // }
 
-        let mut res = Response::new();
+        let res = Response::new();
+        let mut msgs: Vec<CosmosMsg> = vec![];
+
         match &from_token {
             TokenInfo::CW20Token { contract_addr } => {
                 let asset_transfer = CosmosMsg::Wasm(WasmMsg::Execute {
@@ -70,7 +69,7 @@ pub mod execute {
                     })?,
                     funds: vec![],
                 });
-                res = res.add_message(asset_transfer);
+                msgs.push(asset_transfer);
             }
             TokenInfo::NativeToken { denom: _denom } => {
                 let sent_fund = info
@@ -82,6 +81,7 @@ pub mod execute {
                 if sent_fund.clone().amount.u128() < amount_in {
                     return Err(StdError::generic_err("Insufficient funds sent"));
                 };
+                // TODO: Change this hardcoded denom and instead use must_pay from cw_utils
                 if sent_fund.denom != "unibi".to_string() {
                     return Err(StdError::generic_err("Invalid denomination"));
                 };
@@ -91,14 +91,11 @@ pub mod execute {
         let amount_out = calculate_swap_amount(
             deps.as_ref(),
             env,
-            info.clone(),
             from_token.clone(),
             to_token.clone(),
             amount_in,
         )?;
         println!("Amount out {:?}", amount_out);
-
-        let mut msgs: Vec<CosmosMsg> = vec![];
 
         let fees = FEES.load(deps.storage)?;
         let protocol_fees_amount =
@@ -139,10 +136,9 @@ pub mod execute {
         Ok(res.add_messages(msgs))
     }
 
-    fn calculate_swap_amount(
+    pub fn calculate_swap_amount(
         deps: Deps,
         env: Env,
-        _info: MessageInfo,
         from_token: TokenInfo,
         to_token: TokenInfo,
         amount_in: u128,

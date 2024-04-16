@@ -1,16 +1,17 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdError, StdResult, Uint128,
+    to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult, Uint128,
 };
-use packages::pair::{ExecuteMsg, InstantiateMsg, PairInfo, QueryMsg, Fees};
+use cw2::set_contract_version;
+use packages::pair::{ExecuteMsg, InstantiateMsg, PairInfo, QueryMsg, Fees, MigrateMsg};
 use crate::state::{FEES, PAIR_INFO};
 use crate::execute_pt::execute;
 use crate::query_pt::query;
 
 // version info for migration info
-const _CONTRACT_NAME: &str = "crates.io:nibiru-hack";
-const _CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
+const CONTRACT_NAME: &str = "crates.io:nibiru-hack";
+const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -89,14 +90,14 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
             to_binary(&query::query_lp_token_amount(deps, env, assets)?)
         }
         QueryMsg::GetEstimatedTokenAmounts { lp_amount } => {
-            todo!()
+            to_binary(&query::query_estimated_token_amounts(deps, env, lp_amount)?)
         }
         QueryMsg::GetAmountOut {
             from_token,
             to_token,
             amount_in,
         } => {
-            todo!()
+            to_binary(&query::query_amount_out(deps, env, from_token, to_token, amount_in)?)
         }
         QueryMsg::GetReserves0 {} => {
             todo!()
@@ -107,18 +108,33 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     }
 }
 
+
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> StdResult<Response> {
-    match msg.id {
-        0u64 => reply::instantiate_reply(deps, env, msg),
-        _ => Ok(Response::default()),
-    }
+pub fn migrate(deps: DepsMut, env: Env, _msg: MigrateMsg) -> StdResult<Response> {
+    let info_str: String = format!(
+        "migrating contract: {}, new_contract_version: {}, contract_name: {}",
+        env.contract.address,
+        CONTRACT_VERSION.to_string(),
+        CONTRACT_NAME.to_string()
+    );
+    deps.api.debug(&info_str);
+    set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+    Ok(Response::default())
 }
 
-pub mod reply {
-    use super::*;
 
-    pub fn instantiate_reply(_deps: DepsMut, _env: Env, _msg: Reply) -> StdResult<Response> {
-        Ok(Response::new())
-    }
-}
+// #[cfg_attr(not(feature = "library"), entry_point)]
+// pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> StdResult<Response> {
+//     match msg.id {
+//         0u64 => reply::instantiate_reply(deps, env, msg),
+//         _ => Ok(Response::default()),
+//     }
+// }
+
+// pub mod reply {
+//     use super::*;
+
+//     pub fn instantiate_reply(_deps: DepsMut, _env: Env, _msg: Reply) -> StdResult<Response> {
+//         Ok(Response::new())
+//     }
+// }

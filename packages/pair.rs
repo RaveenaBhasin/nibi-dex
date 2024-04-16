@@ -93,3 +93,7 @@ pub enum QueryMsg {
     #[returns(Uint128)]
     GetReserves1 {},
 }
+
+
+#[cw_serde]
+pub struct MigrateMsg {}

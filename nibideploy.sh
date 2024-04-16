@@ -81,11 +81,11 @@ CODE_ID=$(echo $RES | jq -r '.logs[0].events[-1].attributes[-1].value')
 
 echo "✅ CODE_ID has been now generated: $CODE_ID"
 
-# CODE_ID=378
+# FACTORY_CODE_ID=378
 # INIT='{
 #        "pair_code_id": 250
 # }'
-# nibid tx wasm instantiate $CODE_ID "$INIT" --from $SAVED_ADDRESS --label "instantiate factory" --admin $SAVED_ADDRESS $TXFLAG -y <<<"$(source ./../../.env && echo $NIBI_KEY)"
+# nibid tx wasm instantiate $FACTORY_CODE_ID "$INIT" --from $SAVED_ADDRESS --label "instantiate factory" --admin $SAVED_ADDRESS $TXFLAG -y <<<"$(source ./../../.env && echo $NIBI_KEY)"
 
 CODE_ID=379
 # INIT='{

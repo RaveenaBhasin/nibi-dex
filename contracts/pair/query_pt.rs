@@ -8,15 +8,15 @@ const _CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 pub mod query {
     use std::u128;
-
     use super::*;
     use cosmwasm_std::{
-        Addr, AllBalanceResponse, BalanceResponse, BankQuery, Coin, CosmosMsg, Empty, Env,
-        QuerierWrapper, QueryRequest, StdError, Uint128, WasmMsg, WasmQuery,
+        Addr, AllBalanceResponse, BalanceResponse, BankQuery, Coin, Env,
+        QuerierWrapper, QueryRequest, StdError, Uint128, WasmQuery,
     };
-    use cw20::{Cw20ExecuteMsg, Cw20QueryMsg, TokenInfoResponse};
+    use cw20::{Cw20QueryMsg, TokenInfoResponse};
     use cw20_base::state::TOKEN_INFO;
     use packages::pair::{Token, TokenInfo};
+    use crate::execute_pt::execute::calculate_swap_amount;
 
     pub fn query_pair_info(deps: Deps) -> StdResult<PairInfo> {
         let pair_info: PairInfo = PAIR_INFO.load(deps.storage).unwrap();
@@ -80,6 +80,17 @@ pub mod query {
         Ok(liquidity_minted)
     }
 
+    pub fn query_amount_out(
+        deps: Deps, 
+        env: Env,
+        from_token: TokenInfo,
+        to_token: TokenInfo,
+        amount_in: u128
+    ) -> StdResult<u128> {
+        let amount_out = calculate_swap_amount(deps, env, from_token, to_token, amount_in).unwrap();
+        Ok(amount_out)
+    }
+
     pub fn _query_token_info(
         querier: &QuerierWrapper,
         contract_addr: Addr,
@@ -131,5 +142,14 @@ pub mod query {
 
         // load balance form the token contract
         Ok(res.balance)
+    }
+
+    pub fn query_estimated_token_amounts(
+        deps: Deps,
+        env: Env,
+        lp_amount: u128
+    ) -> StdResult<[Token; 2]> {
+        
+        todo!()
     }
 }
