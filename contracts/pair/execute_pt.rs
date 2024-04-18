@@ -1,7 +1,7 @@
 use crate::state::PAIR_INFO;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::{
-    to_binary, Decimal256, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult, Uint128,
+    to_binary, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult, Uint128,
 };
 use cw20::Cw20ExecuteMsg;
 use packages::pair::PairInfo;
