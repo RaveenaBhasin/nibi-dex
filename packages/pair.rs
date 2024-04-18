@@ -92,6 +92,9 @@ pub enum QueryMsg {
 
     #[returns(Uint128)]
     GetReserves1 {},
+
+    #[returns(Fees)]
+    GetFees {}
 }
 
 #[cw_serde]

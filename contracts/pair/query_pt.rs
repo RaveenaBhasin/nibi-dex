@@ -8,14 +8,14 @@ const _CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 pub mod query {
     use super::*;
-    use crate::execute_pt::execute::calculate_swap_amount;
+    use crate::{execute_pt::execute::calculate_swap_amount, state::FEES};
     use cosmwasm_std::{
         Addr, AllBalanceResponse, BalanceResponse, BankQuery, Coin, Env, QuerierWrapper,
         QueryRequest, StdError, Uint128, WasmQuery,
     };
     use cw20::{Cw20QueryMsg, TokenInfoResponse};
     use cw20_base::state::TOKEN_INFO;
-    use packages::pair::{Token, TokenInfo};
+    use packages::pair::{Fees, Token, TokenInfo};
     use std::u128;
 
     pub fn query_pair_info(deps: Deps) -> StdResult<PairInfo> {
@@ -229,5 +229,10 @@ pub mod query {
                 env.contract.address.clone(),
             )?,
         })
+    }
+
+    pub fn query_fees(deps: Deps, env: Env) -> StdResult<Fees> {
+        let fees_info = FEES.load(deps.storage).unwrap();
+        Ok(fees_info)
     }
 }
