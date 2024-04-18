@@ -95,7 +95,6 @@ pub mod execute {
             to_token.clone(),
             amount_in,
         )?;
-        println!("Amount out {:?}", amount_out);
 
         let fees = FEES.load(deps.storage)?;
         let protocol_fees_amount =
@@ -180,15 +179,17 @@ pub mod execute {
         // .into()?;
         // let protocol_fees_amount = amount_in * (fees.protocol_fee_percent) / (FEE_SCALING_FACTOR);
         let fees = FEES.load(deps.storage)?;
+        println!("fees inside swap {:?}", fees);
         let protocol_fees_amount = get_protocol_fees(amount_in, fees.protocol_fee_percent);
-        let lp_fees_amount = amount_in * (fees.lp_fee_percent) / (FEE_SCALING_FACTOR);
+        let lp_fees_amount = amount_in * (fees.lp_fee_percent) / (FEE_SCALING_FACTOR); 
+        println!("Protocol fees amount {:?}", protocol_fees_amount);
+        println!("Lp fees amount {:?}", lp_fees_amount);
+        println!("Token balances {:?} {:?} {:?}", token_balances[0], token_balances[1], amount_in);
 
         let amount_out = (token_balances[1] * (amount_in - protocol_fees_amount - lp_fees_amount))
             / (token_balances[0] + (amount_in - protocol_fees_amount - lp_fees_amount));
-        println!(
-            "Logging inside contract swap function{:?} {:?} {:?} ",
-            assets, amount_out, token_balances
-        );
+
+        println!("Amount out {:?}  ", amount_out);
         Ok(amount_out.u128())
     }
 
@@ -394,7 +395,8 @@ pub mod execute {
         lp_token_amount: Uint128,
     ) -> StdResult<Response> {
         let pair_info: PairInfo = PAIR_INFO.load(deps.storage).unwrap();
-        let assets_returned = query::query_estimated_token_amounts(deps.as_ref(), env.clone(), lp_token_amount)?;
+        let assets_returned =
+            query::query_estimated_token_amounts(deps.as_ref(), env.clone(), lp_token_amount)?;
 
         cw20_base::contract::execute_burn(deps, env, info.clone(), lp_token_amount).unwrap();
 
@@ -429,7 +431,10 @@ pub mod execute {
             ("action", "withdraw liquidity"),
             (
                 "Assets returned",
-                &format!("{}, {}", assets_returned[0].amount, assets_returned[1].amount),
+                &format!(
+                    "{}, {}",
+                    assets_returned[0].amount, assets_returned[1].amount
+                ),
             ),
         ]))
     }

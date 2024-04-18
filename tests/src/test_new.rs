@@ -6,7 +6,7 @@ use packages::factory::{
     ExecuteMsg as FactoryExecuteMsg, InstantiateMsg as FactoryInstantiate, PoolInfo,
     QueryMsg as FactoryQueryMsg,
 };
-use packages::pair::{ExecuteMsg as PairExecuteMsg, QueryMsg as PairQueryMsg, Token, TokenInfo};
+use packages::pair::{ExecuteMsg as PairExecuteMsg, Fees, QueryMsg as PairQueryMsg, Token, TokenInfo};
 use packages::router::InstantiateMsg as RouterInstantiate;
 
 fn mock_app() -> App {
@@ -142,7 +142,7 @@ fn initialize_contracts(app: &mut App) -> ContractInfo {
             &FactoryInstantiate { pair_code_id },
             &[],
             "Instantiate Factory",
-            None,
+            Some("Sender".to_string()),
         )
         .unwrap();
     println!("Factory contract addr: {}", factory_contract_addr);
@@ -274,13 +274,39 @@ fn add_liquidity_test() {
         contract_info.token1_contract_addr.clone(),
         &cw20::Cw20ExecuteMsg::IncreaseAllowance {
             spender: pair_contract_addr.clone(),
-            amount: Uint128::from(200u128),
+            amount: Uint128::from(200_000_000u128),
             expires: None,
         },
         &[],
     )
     .unwrap();
     println!("Increased Allowance for Token1 \n",);
+
+    mint_native(
+        &mut app,
+        "user".to_string(),
+        "unibi".to_string(),
+        200_000_000,
+        //     &app.wrap(),
+    );
+
+    let increase_allowance_token1 = app
+        .execute_contract(
+            Addr::unchecked("user"),
+            contract_info.token1_contract_addr.clone(),
+            &cw20::Cw20ExecuteMsg::IncreaseAllowance {
+                spender: pair_contract_addr.clone(),
+                amount: Uint128::from(100_000_000u128),
+                expires: None,
+            },
+            &[],
+        )
+        .unwrap();
+
+    println!(
+        "Increased Allowance for Token1: {:?}\n",
+        increase_allowance_token1
+    );
 
     let get_liquidity_amt: Uint128 = app
         .wrap()
@@ -290,11 +316,11 @@ fn add_liquidity_test() {
                 assets: [
                     Token {
                         info: token_info_1.clone(),
-                        amount: Uint128::from(100u128),
+                        amount: Uint128::from(100_000_000u128),
                     },
                     Token {
                         info: token_info_2.clone(),
-                        amount: Uint128::from(100u128),
+                        amount: Uint128::from(100_000_000u128),
                     },
                 ],
             },
@@ -302,6 +328,7 @@ fn add_liquidity_test() {
         .unwrap();
 
     println!("Getting liquidity amount {:?}", get_liquidity_amt);
+
     let add_liquidity_res = app
         .execute_contract(
             Addr::unchecked("user"),
@@ -310,16 +337,19 @@ fn add_liquidity_test() {
                 assets: [
                     Token {
                         info: token_info_1.clone(),
-                        amount: Uint128::from(100u128),
+                        amount: Uint128::from(1_000_000u128),
                     },
                     Token {
                         info: token_info_2.clone(),
-                        amount: Uint128::from(100u128),
+                        amount: Uint128::from(1_000_000u128),
                     },
                 ],
                 min_liquidity_amt: Uint128::from(1u128),
             },
-            &[],
+            &vec![Coin {
+                amount: Uint128::from(1_000_000u128),
+                denom: "unibi".to_string(),
+            }],
         )
         .unwrap();
 
@@ -358,25 +388,38 @@ fn swap_token_test() {
         "unibi".to_string(),
     );
 
+    let query_fees: Fees = app
+        .wrap()
+        .query_wasm_smart(
+            pair_contract_addr.clone(),
+            &PairQueryMsg::GetFees {  },
+        )
+        .unwrap();
+
+    println!("Fees: {:?}", query_fees);
+
+
     mint_native(
         &mut app,
         "user".to_string(),
         "unibi".to_string(),
-        100,
+        15000000,
         //     &app.wrap(),
     );
+
     let increase_allowance_token1 = app
         .execute_contract(
             Addr::unchecked("user"),
             contract_info.token1_contract_addr.clone(),
             &cw20::Cw20ExecuteMsg::IncreaseAllowance {
                 spender: pair_contract_addr.clone(),
-                amount: Uint128::from(200u128),
+                amount: Uint128::from(100_000_000u128),
                 expires: None,
             },
             &[],
         )
         .unwrap();
+
     println!(
         "Increased Allowance for Token1: {:?}\n",
         increase_allowance_token1
@@ -389,17 +432,17 @@ fn swap_token_test() {
             assets: [
                 Token {
                     info: token_info_1.clone(),
-                    amount: Uint128::from(100u128),
+                    amount: Uint128::from(1_000_000u128),
                 },
                 Token {
                     info: token_info_2.clone(),
-                    amount: Uint128::from(100u128),
+                    amount: Uint128::from(1_000_000u128),
                 },
             ],
             min_liquidity_amt: Uint128::from(100u128),
         },
         &vec![Coin {
-            amount: Uint128::from(100u128),
+            amount: Uint128::from(1_000_000u128),
             denom: "unibi".to_string(),
         }],
     )
@@ -411,7 +454,7 @@ fn swap_token_test() {
         "unibi".to_string(),
     );
     println!(
-        "Pair unibi balance after liquidity addtion: {:?}",
+        "Pair unibi balance after liquidity addition: {:?}",
         new_balance
     );
     // Check if user LpToken balance Increased
@@ -433,6 +476,7 @@ fn swap_token_test() {
         query_lp_token
     );
 
+    //TODO: check enough liquidity
     let swap_res = app
         .execute_contract(
             Addr::unchecked("user"),
@@ -440,12 +484,12 @@ fn swap_token_test() {
             &PairExecuteMsg::SwapAsset {
                 from_token: token_info_2.clone(),
                 to_token: token_info_1.clone(),
-                amount_in: 10u128,
+                amount_in: 10_000_000u128,
                 min_amount_out: 5u128,
             },
             // &[]
             &vec![Coin {
-                amount: Uint128::from(10u128),
+                amount: Uint128::from(10_000_000u128),
                 denom: "unibi".to_string(),
             }],
         )

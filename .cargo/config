@@ -4,4 +4,5 @@ unit-test = "test --lib"
 factory-schema = "run --bin factory-schema"
 pair-schema = "run --bin pair-schema"
 router-schema = "run --bin router-schema"
-integration-test = "test -- --show-output"
+integration-test = "test -- --nocapture"
+

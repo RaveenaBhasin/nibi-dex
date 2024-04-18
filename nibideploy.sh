@@ -72,14 +72,14 @@ echo "PROJECT_NAME: $PROJECT_NAME, WASM_FILE: $WASM_FILE"
 
 getAddress
 
-RES=$(nibid tx wasm store ./../../artifacts/$WASM_FILE --from $SAVED_ADDRESS $TXFLAG -y --output json -b sync <<<"$(source ./../../.env && echo $NIBI_KEY)")
+# RES=$(nibid tx wasm store ./../../artifacts/$WASM_FILE --from $SAVED_ADDRESS $TXFLAG -y --output json -b sync <<<"$(source ./../../.env && echo $NIBI_KEY)")
 
-echo "RES: $RES"
-echo "✅ wasm file uploaded on blockchain with $CHAIN_ID !........Enjoy 🚀"
+# echo "RES: $RES"
+# echo "✅ wasm file uploaded on blockchain with $CHAIN_ID !........Enjoy 🚀"
 
-CODE_ID=$(echo $RES | jq -r '.logs[0].events[-1].attributes[-1].value')
+# CODE_ID=$(echo $RES | jq -r '.logs[0].events[-1].attributes[-1].value')
 
-echo "✅ CODE_ID has been now generated: $CODE_ID"
+# echo "✅ CODE_ID has been now generated: $CODE_ID"
 
 # FACTORY_CODE_ID=378
 # INIT='{
@@ -103,16 +103,20 @@ CODE_ID=379
 
 # nibid tx wasm migrate "nibi1uzvw6tfuzm668k3ysmps3ph3f7nq6ltwswammscwdz0klaf5zyysuwsyuh" $CODE_ID '{}' --from $SAVED_ADDRESS $TXFLAG -y <<<"$(source ./../../.env && echo $NIBI_KEY)"
 # INIT='{
-#      "name" : "USDT",
-#      "symbol": "USDT",
+#      "name" : "PURR",
+#      "symbol": "PURR",
 #      "decimals": 6,
 #      "initial_balances": [
 #          {
 #              "address": "nibi1e5lgey362kwkswas7khfvlqx9y70dhtkn7fq26",
 #              "amount": "1000000000"
 #          }
-#      ]
-#  CODE_ID=349
+#      ],
+#      "mint": {
+#       "minter": "nibi1e5lgey362kwkswas7khfvlqx9y70dhtkn7fq26"
+#      }
+#     }'
+#  CODE_ID=396
 # nibid tx wasm instantiate $CODE_ID "$INIT" --from $SAVED_ADDRESS --label "instantiate mock coin" --no-admin $TXFLAG -y <<<"$(source ./../../.env && echo $NIBI_KEY)"
 
 # CREATE_PAIR='{
@@ -228,6 +232,6 @@ CODE_ID=379
 #             }
 #     }
 
-# }'
-# CONTRACT="nibi1jfuzdxd92h66z5g0k4ewgyl5lfzj7d9k089aqfn4tk68hd83ne2q2v8ump"
-# nibid query wasm contract-state smart $CONTRACT "$TOKEN_QUERY" --node $RPC --output json
+ }'
+CONTRACT="nibi1actkptqdrktuzje8vr8hkqjcpmpxg09k60ja4hhv859fqnprdvdqs6tpzr"
+nibid query wasm contract-state smart $CONTRACT "$TOKEN_QUERY" --node $RPC --output json

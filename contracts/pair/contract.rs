@@ -1,13 +1,13 @@
+use crate::execute_pt::execute;
+use crate::query_pt::query;
+use crate::state::{FEES, PAIR_INFO};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
     to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult, Uint128,
 };
 use cw2::set_contract_version;
-use packages::pair::{ExecuteMsg, InstantiateMsg, PairInfo, QueryMsg, Fees, MigrateMsg};
-use crate::state::{FEES, PAIR_INFO};
-use crate::execute_pt::execute;
-use crate::query_pt::query;
+use packages::pair::{ExecuteMsg, Fees, InstantiateMsg, MigrateMsg, PairInfo, QueryMsg};
 
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:nibiru-hack";
@@ -26,8 +26,8 @@ pub fn instantiate(
     };
     PAIR_INFO.save(deps.storage, &pair_info)?;
     let fees = Fees {
-        lp_fee_percent: Uint128::from(30u32), 
-        protocol_fee_percent: Uint128::from(10u32), 
+        lp_fee_percent: Uint128::from(30u32),
+        protocol_fee_percent: Uint128::from(10u32),
         protocol_fee_recipient: msg.treasury,
     };
     FEES.save(deps.storage, &fees)?;
@@ -96,18 +96,14 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
             from_token,
             to_token,
             amount_in,
-        } => {
-            to_binary(&query::query_amount_out(deps, env, from_token, to_token, amount_in)?)
-        }
-        QueryMsg::GetReserves0 {} => {
-            to_binary(&query::query_reserves_0(deps, env)?)
-        }
-        QueryMsg::GetReserves1 {} => {
-            to_binary(&query::query_reserves_1(deps, env)?)
-        }
+        } => to_binary(&query::query_amount_out(
+            deps, env, from_token, to_token, amount_in,
+        )?),
+        QueryMsg::GetReserves0 {} => to_binary(&query::query_reserves_0(deps, env)?),
+        QueryMsg::GetReserves1 {} => to_binary(&query::query_reserves_1(deps, env)?),
+        QueryMsg::GetFees {} => to_binary(&query::query_fees(deps, env)?)
     }
 }
-
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn migrate(deps: DepsMut, env: Env, _msg: MigrateMsg) -> StdResult<Response> {
@@ -121,7 +117,6 @@ pub fn migrate(deps: DepsMut, env: Env, _msg: MigrateMsg) -> StdResult<Response>
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
     Ok(Response::default())
 }
-
 
 // #[cfg_attr(not(feature = "library"), entry_point)]
 // pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> StdResult<Response> {
