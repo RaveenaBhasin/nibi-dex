@@ -231,7 +231,7 @@ pub mod query {
         })
     }
 
-    pub fn query_fees(deps: Deps, env: Env) -> StdResult<Fees> {
+    pub fn query_fees(deps: Deps, _env: Env) -> StdResult<Fees> {
         let fees_info = FEES.load(deps.storage).unwrap();
         Ok(fees_info)
     }

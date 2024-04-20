@@ -73,21 +73,20 @@ echo "PROJECT_NAME: $PROJECT_NAME, WASM_FILE: $WASM_FILE"
 getAddress
 
 # RES=$(nibid tx wasm store ./../../artifacts/$WASM_FILE --from $SAVED_ADDRESS $TXFLAG -y --output json -b sync <<<"$(source ./../../.env && echo $NIBI_KEY)")
-
+#
 # echo "RES: $RES"
 # echo "✅ wasm file uploaded on blockchain with $CHAIN_ID !........Enjoy 🚀"
-
+#
 # CODE_ID=$(echo $RES | jq -r '.logs[0].events[-1].attributes[-1].value')
-
+#
 # echo "✅ CODE_ID has been now generated: $CODE_ID"
 
-# FACTORY_CODE_ID=378
-# INIT='{
-#        "pair_code_id": 250
-# }'
+#FACTORY_CODE_ID=409
+# PAIR_CODE_ID=410
+
 # nibid tx wasm instantiate $FACTORY_CODE_ID "$INIT" --from $SAVED_ADDRESS --label "instantiate factory" --admin $SAVED_ADDRESS $TXFLAG -y <<<"$(source ./../../.env && echo $NIBI_KEY)"
 
-CODE_ID=379
+# CODE_ID=379
 # INIT='{
 #
 
@@ -101,7 +100,9 @@ CODE_ID=379
 # }'
 # nibid tx wasm instantiate $CODE_ID "$INIT" --from $SAVED_ADDRESS --label "instantiate router" --no-admin $TXFLAG -y <<<"$(source ./../../.env && echo $NIBI_KEY)"
 
-# nibid tx wasm migrate "nibi1uzvw6tfuzm668k3ysmps3ph3f7nq6ltwswammscwdz0klaf5zyysuwsyuh" $CODE_ID '{}' --from $SAVED_ADDRESS $TXFLAG -y <<<"$(source ./../../.env && echo $NIBI_KEY)"
+#FACTORY_CODE_ID=417
+#nibid tx wasm migrate "nibi140p36sqk0a0xwd8wgdz37vj67xh9f5g98hv9cp8yfthyhhr8ssrqf0g5cm" $FACTORY_CODE_ID '{}' --from $SAVED_ADDRESS $TXFLAG -y <<<"$(source ./../../.env && echo $NIBI_KEY)"
+
 # INIT='{
 #      "name" : "PURR",
 #      "symbol": "PURR",
@@ -171,50 +172,50 @@ CODE_ID=379
 # CONTRACT="nibi1v3r5utz4uhpu74ua4y6nr57y8yvpcdsmgm238q3f5qp259lgkytsmej6x0"
 # nibid tx wasm execute $CONTRACT "$INCREASE_ALLOWANCE" --from $SAVED_ADDRESS $TXFLAG -y <<< "$(source ./../../.env && echo $NIBI_KEY)"
 
-# ADD_LIQ='{
-#     "add_liquidity": {
-#         "assets": [
-#             {
-#                 "info": {
-#                     "c_w20_token": {
-#                         "contract_addr": "nibi1v3r5utz4uhpu74ua4y6nr57y8yvpcdsmgm238q3f5qp259lgkytsmej6x0"
-#                     }
-#                 },
-#                 "amount":"1000"
-#             },
-#             {
-#                 "info": {
-#                     "native_token" : {
-#                         "denom" : "unibi"
-#                     }
-#                 },
-#                 "amount": "1000"
-#             }
-#         ],
-#         "min_liquidity_amt": "0"
-#     }
-# }'
-# CONTRACT="nibi1jfuzdxd92h66z5g0k4ewgyl5lfzj7d9k089aqfn4tk68hd83ne2q2v8ump"
-# nibid tx wasm execute $CONTRACT "$ADD_LIQ" --from $SAVED_ADDRESS $TXFLAG -y <<< "$(source ./../../.env && echo $NIBI_KEY)"
+ADD_LIQ='{
+     "add_liquidity": {
+         "assets": [
+             {
+                 "info": {
+                     "c_w20_token": {
+                         "contract_addr": "nibi1v3r5utz4uhpu74ua4y6nr57y8yvpcdsmgm238q3f5qp259lgkytsmej6x0"
+                     }
+                 },
+                 "amount":"1000"
+             },
+             {
+                 "info": {
+                     "native_token" : {
+                         "denom" : "unibi"
+                     }
+                 },
+                 "amount": "1000"
+             }
+         ],
+         "min_liquidity_amt": "0"
+     }
+ }'
+CONTRACT="nibi1wulw7jle397sd0rcxl4qs3l2p785htsrzdwqgq29qatnygc5u4sq7ky0pj"
+nibid tx wasm execute $CONTRACT "$ADD_LIQ" --from $SAVED_ADDRESS $TXFLAG --amount 1000unibi -y <<<"$(source ./../../.env && echo $NIBI_KEY)"
 
 # SWAP='{
 #     "swap_asset": {
-#         "from_token": {
-#             "c_w20_token": {
-#                 "contract_addr":"nibi1v3r5utz4uhpu74ua4y6nr57y8yvpcdsmgm238q3f5qp259lgkytsmej6x0"
+#       "from_token": {
+#             "native_token": {
+#                 "denom": "unibi"
 #             }
 #         },
 #         "to_token": {
-#             "native_token": {
-#                 "denom": "unibi"
+#             "c_w20_token": {
+#                 "contract_addr":"nibi1v3r5utz4uhpu74ua4y6nr57y8yvpcdsmgm238q3f5qp259lgkytsmej6x0"
 #             }
 #         },
 #         "amount_in": "10",
 #         "min_amount_out": "1"
 #     }
 # }'
-# CONTRACT="nibi1jfuzdxd92h66z5g0k4ewgyl5lfzj7d9k089aqfn4tk68hd83ne2q2v8ump"
-# nibid tx wasm execute $CONTRACT "$SWAP" --from $SAVED_ADDRESS $TXFLAG -y <<<"$(source ./../../.env && echo $NIBI_KEY)"
+# CONTRACT="nibi1wulw7jle397sd0rcxl4qs3l2p785htsrzdwqgq29qatnygc5u4sq7ky0pj"
+# nibid tx wasm execute $CONTRACT "$SWAP" --from $SAVED_ADDRESS $TXFLAG --amount 10unibi -y <<<"$(source ./../../.env && echo $NIBI_KEY)"
 
 # QUERY_ALLOWANCE='{
 #     "allowance": {
@@ -225,13 +226,41 @@ CODE_ID=379
 # CONTRACT="nibi1v3r5utz4uhpu74ua4y6nr57y8yvpcdsmgm238q3f5qp259lgkytsmej6x0"
 # nibid query wasm contract-state smart $CONTRACT "$QUERY_ALLOWANCE" --node $RPC --output json
 
-# TOKEN_QUERY='{
+# Look for nibi balance
+#TOKEN_QUERY='{
 #     "token_query": {
 #             "balance": {
-#                 "address": "nibi1e5lgey362kwkswas7khfvlqx9y70dhtkn7fq26"
+#                 "address": "nibi1wulw7jle397sd0rcxl4qs3l2p785htsrzdwqgq29qatnygc5u4sq7ky0pj"
 #             }
 #     }
+#
+# }'
+#CONTRACT="nibi1v3r5utz4uhpu74ua4y6nr57y8yvpcdsmgm238q3f5qp259lgkytsmej6x0"
+#nibid query wasm contract-state smart $CONTRACT "$TOKEN_QUERY" --node $RPC --output json
 
- }'
-CONTRACT="nibi1actkptqdrktuzje8vr8hkqjcpmpxg09k60ja4hhv859fqnprdvdqs6tpzr"
-nibid query wasm contract-state smart $CONTRACT "$TOKEN_QUERY" --node $RPC --output json
+# GET_OWNER='{
+#   "get_owner": {}
+# }'
+
+# FACTORY_CONTRACT="nibi1uzvw6tfuzm668k3ysmps3ph3f7nq6ltwswammscwdz0klaf5zyysuwsyuh"
+# nibid query wasm contract-state smart $FACTORY_CONTRACT "$GET_OWNER" --node $RPC --output json
+
+#MINT='{
+#  "mint": {
+#    "recipient": "nibi1xcadlkrzghpl3qrdmk6wa2hdc4f2mw2t92t3pk",
+#    "amount": "100000000"
+#  }
+#}'
+#TOKEN_ADDRESS="nibi14e36rdrkmkpuukdf6u2ppv0xautuqd5wdn76d759zjs9rkzmljjs7e7y8d"
+#nibid tx wasm execute $TOKEN_ADDRESS "$MINT" --from $SAVED_ADDRESS $TXFLAG -y <<<"$(source ./../../.env && echo $NIBI_KEY)"
+
+#UPDATE_PAIR_CODE_ID='{
+#  "update_pair_code_id": {
+#    "pair_code_id": 418
+#  }
+#}'
+#FACTORY_ADDRESS="nibi140p36sqk0a0xwd8wgdz37vj67xh9f5g98hv9cp8yfthyhhr8ssrqf0g5cm"
+#nibid tx wasm execute $FACTORY_ADDRESS "$UPDATE_PAIR_CODE_ID" --from $SAVED_ADDRESS $TXFLAG -y <<<"$(source ./../../.env && echo $NIBI_KEY)"
+
+#PAIR_CODE_ID=418
+#nibid tx wasm migrate "nibi1wulw7jle397sd0rcxl4qs3l2p785htsrzdwqgq29qatnygc5u4sq7ky0pj" $PAIR_CODE_ID '{}' --from $SAVED_ADDRESS $TXFLAG -y <<<"$(source ./../../.env && echo $NIBI_KEY)"
