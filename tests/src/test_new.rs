@@ -6,7 +6,9 @@ use packages::factory::{
     ExecuteMsg as FactoryExecuteMsg, InstantiateMsg as FactoryInstantiate, PoolInfo,
     QueryMsg as FactoryQueryMsg,
 };
-use packages::pair::{ExecuteMsg as PairExecuteMsg, Fees, QueryMsg as PairQueryMsg, Token, TokenInfo};
+use packages::pair::{
+    ExecuteMsg as PairExecuteMsg, Fees, QueryMsg as PairQueryMsg, Token, TokenInfo,
+};
 use packages::router::InstantiateMsg as RouterInstantiate;
 
 fn mock_app() -> App {
@@ -286,7 +288,7 @@ fn add_liquidity_test() {
         &mut app,
         "user".to_string(),
         "unibi".to_string(),
-        200_000_000,
+        10000_000_000,
         //     &app.wrap(),
     );
 
@@ -390,14 +392,10 @@ fn swap_token_test() {
 
     let query_fees: Fees = app
         .wrap()
-        .query_wasm_smart(
-            pair_contract_addr.clone(),
-            &PairQueryMsg::GetFees {  },
-        )
+        .query_wasm_smart(pair_contract_addr.clone(), &PairQueryMsg::GetFees {})
         .unwrap();
 
     println!("Fees: {:?}", query_fees);
-
 
     mint_native(
         &mut app,
@@ -484,8 +482,8 @@ fn swap_token_test() {
             &PairExecuteMsg::SwapAsset {
                 from_token: token_info_2.clone(),
                 to_token: token_info_1.clone(),
-                amount_in: 10_000_000u128,
-                min_amount_out: 5u128,
+                amount_in: Uint128::from(10_000_000u128),
+                min_amount_out: Uint128::from(5u128),
             },
             // &[]
             &vec![Coin {

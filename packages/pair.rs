@@ -46,8 +46,8 @@ pub enum ExecuteMsg {
     SwapAsset {
         from_token: TokenInfo,
         to_token: TokenInfo,
-        amount_in: u128,
-        min_amount_out: u128,
+        amount_in: Uint128,
+        min_amount_out: Uint128,
     },
     AddLiquidity {
         assets: [Token; 2],
@@ -77,11 +77,11 @@ pub enum QueryMsg {
     #[returns(u128)]
     GetEstimatedLpAmount { assets: [Token; 2] },
 
-    #[returns(u128)]
+    #[returns(Uint128)]
     GetAmountOut {
         from_token: TokenInfo,
         to_token: TokenInfo,
-        amount_in: u128,
+        amount_in: Uint128,
     },
 
     #[returns([Token; 2])]
@@ -94,8 +94,9 @@ pub enum QueryMsg {
     GetReserves1 {},
 
     #[returns(Fees)]
-    GetFees {}
+    GetFees {},
 }
 
 #[cw_serde]
 pub struct MigrateMsg {}
+

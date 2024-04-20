@@ -28,8 +28,8 @@ pub mod execute {
         info: MessageInfo,
         from_token: TokenInfo,
         to_token: TokenInfo,
-        amount_in: u128,
-        min_amount_out: u128,
+        amount_in: Uint128,
+        min_amount_out: Uint128,
     ) -> StdResult<Response> {
         let pair_info: PairInfo = PAIR_INFO.load(deps.storage).unwrap();
 
@@ -78,7 +78,7 @@ pub mod execute {
                     .ok_or_else(|| StdError::generic_err("No funds sent"))
                     .unwrap();
                 println!("Sent fund {:?}", sent_fund);
-                if sent_fund.clone().amount.u128() < amount_in {
+                if sent_fund.clone().amount < amount_in {
                     return Err(StdError::generic_err("Insufficient funds sent"));
                 };
                 // TODO: Change this hardcoded denom and instead use must_pay from cw_utils
@@ -140,8 +140,8 @@ pub mod execute {
         env: Env,
         from_token: TokenInfo,
         to_token: TokenInfo,
-        amount_in: u128,
-    ) -> StdResult<u128> {
+        amount_in: Uint128,
+    ) -> StdResult<Uint128> {
         let mut token_balances = vec![];
         let this_address = env.contract.address.clone();
         let assets = [from_token.clone(), to_token.clone()];
@@ -193,7 +193,7 @@ pub mod execute {
             / (token_balances[0] + (amount_in - protocol_fees_amount - lp_fees_amount));
 
         println!("Amount out {:?}  ", amount_out);
-        Ok(amount_out.u128())
+        Ok(amount_out)
     }
 
     pub fn get_protocol_fees(amount_in: Uint128, fee_percent: Uint128) -> Uint128 {

@@ -16,7 +16,6 @@ pub mod query {
     use cw20::{Cw20QueryMsg, TokenInfoResponse};
     use cw20_base::state::TOKEN_INFO;
     use packages::pair::{Fees, Token, TokenInfo};
-    use std::u128;
 
     pub fn query_pair_info(deps: Deps) -> StdResult<PairInfo> {
         let pair_info: PairInfo = PAIR_INFO.load(deps.storage).unwrap();
@@ -85,8 +84,8 @@ pub mod query {
         env: Env,
         from_token: TokenInfo,
         to_token: TokenInfo,
-        amount_in: u128,
-    ) -> StdResult<u128> {
+        amount_in: Uint128,
+    ) -> StdResult<Uint128> {
         let amount_out = calculate_swap_amount(deps, env, from_token, to_token, amount_in).unwrap();
         Ok(amount_out)
     }

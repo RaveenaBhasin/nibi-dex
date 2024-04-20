@@ -73,12 +73,12 @@ echo "PROJECT_NAME: $PROJECT_NAME, WASM_FILE: $WASM_FILE"
 getAddress
 
 # RES=$(nibid tx wasm store ./../../artifacts/$WASM_FILE --from $SAVED_ADDRESS $TXFLAG -y --output json -b sync <<<"$(source ./../../.env && echo $NIBI_KEY)")
-#
+
 # echo "RES: $RES"
 # echo "✅ wasm file uploaded on blockchain with $CHAIN_ID !........Enjoy 🚀"
-#
+
 # CODE_ID=$(echo $RES | jq -r '.logs[0].events[-1].attributes[-1].value')
-#
+
 # echo "✅ CODE_ID has been now generated: $CODE_ID"
 
 #FACTORY_CODE_ID=409
@@ -172,31 +172,31 @@ getAddress
 # CONTRACT="nibi1v3r5utz4uhpu74ua4y6nr57y8yvpcdsmgm238q3f5qp259lgkytsmej6x0"
 # nibid tx wasm execute $CONTRACT "$INCREASE_ALLOWANCE" --from $SAVED_ADDRESS $TXFLAG -y <<< "$(source ./../../.env && echo $NIBI_KEY)"
 
-ADD_LIQ='{
-     "add_liquidity": {
-         "assets": [
-             {
-                 "info": {
-                     "c_w20_token": {
-                         "contract_addr": "nibi1v3r5utz4uhpu74ua4y6nr57y8yvpcdsmgm238q3f5qp259lgkytsmej6x0"
-                     }
-                 },
-                 "amount":"1000"
-             },
-             {
-                 "info": {
-                     "native_token" : {
-                         "denom" : "unibi"
-                     }
-                 },
-                 "amount": "1000"
-             }
-         ],
-         "min_liquidity_amt": "0"
-     }
- }'
-CONTRACT="nibi1wulw7jle397sd0rcxl4qs3l2p785htsrzdwqgq29qatnygc5u4sq7ky0pj"
-nibid tx wasm execute $CONTRACT "$ADD_LIQ" --from $SAVED_ADDRESS $TXFLAG --amount 1000unibi -y <<<"$(source ./../../.env && echo $NIBI_KEY)"
+#ADD_LIQ='{
+#     "add_liquidity": {
+#         "assets": [
+#             {
+#                 "info": {
+#                     "c_w20_token": {
+#                         "contract_addr": "nibi1v3r5utz4uhpu74ua4y6nr57y8yvpcdsmgm238q3f5qp259lgkytsmej6x0"
+#                     }
+#                 },
+#                 "amount":"1000"
+#             },
+#             {
+#                 "info": {
+#                     "native_token" : {
+#                         "denom" : "unibi"
+#                     }
+#                 },
+#                 "amount": "1000"
+#             }
+#         ],
+#         "min_liquidity_amt": "0"
+#     }
+# }'
+#CONTRACT="nibi1wulw7jle397sd0rcxl4qs3l2p785htsrzdwqgq29qatnygc5u4sq7ky0pj"
+#nibid tx wasm execute $CONTRACT "$ADD_LIQ" --from $SAVED_ADDRESS $TXFLAG --amount 1000unibi -y <<<"$(source ./../../.env && echo $NIBI_KEY)"
 
 # SWAP='{
 #     "swap_asset": {
@@ -210,12 +210,12 @@ nibid tx wasm execute $CONTRACT "$ADD_LIQ" --from $SAVED_ADDRESS $TXFLAG --amoun
 #                 "contract_addr":"nibi1v3r5utz4uhpu74ua4y6nr57y8yvpcdsmgm238q3f5qp259lgkytsmej6x0"
 #             }
 #         },
-#         "amount_in": "10",
+#         "amount_in": "100000",
 #         "min_amount_out": "1"
 #     }
 # }'
 # CONTRACT="nibi1wulw7jle397sd0rcxl4qs3l2p785htsrzdwqgq29qatnygc5u4sq7ky0pj"
-# nibid tx wasm execute $CONTRACT "$SWAP" --from $SAVED_ADDRESS $TXFLAG --amount 10unibi -y <<<"$(source ./../../.env && echo $NIBI_KEY)"
+# nibid tx wasm execute $CONTRACT "$SWAP" --from $SAVED_ADDRESS $TXFLAG --amount 100000unibi -y <<<"$(source ./../../.env && echo $NIBI_KEY)"
 
 # QUERY_ALLOWANCE='{
 #     "allowance": {
@@ -262,5 +262,14 @@ nibid tx wasm execute $CONTRACT "$ADD_LIQ" --from $SAVED_ADDRESS $TXFLAG --amoun
 #FACTORY_ADDRESS="nibi140p36sqk0a0xwd8wgdz37vj67xh9f5g98hv9cp8yfthyhhr8ssrqf0g5cm"
 #nibid tx wasm execute $FACTORY_ADDRESS "$UPDATE_PAIR_CODE_ID" --from $SAVED_ADDRESS $TXFLAG -y <<<"$(source ./../../.env && echo $NIBI_KEY)"
 
-#PAIR_CODE_ID=418
-#nibid tx wasm migrate "nibi1wulw7jle397sd0rcxl4qs3l2p785htsrzdwqgq29qatnygc5u4sq7ky0pj" $PAIR_CODE_ID '{}' --from $SAVED_ADDRESS $TXFLAG -y <<<"$(source ./../../.env && echo $NIBI_KEY)"
+PAIR_CODE_ID=426
+nibid tx wasm migrate "nibi1xsp7gfk2mf7zhs78p3l5eman6l8v3qrwqx83h0a08knv0uzh3hmqzu7jat" $PAIR_CODE_ID '{}' --from $SAVED_ADDRESS $TXFLAG -y <<<"$(source ./../../.env && echo $NIBI_KEY)"
+
+# BALANCE='{
+# "balance": {
+# "address": "nibi1xcadlkrzghpl3qrdmk6wa2hdc4f2mw2t92t3pk"
+# }
+# }'
+# TOKEN_ADDRESS="nibi14e36rdrkmkpuukdf6u2ppv0xautuqd5wdn76d759zjs9rkzmljjs7e7y8d"
+
+# nibid query wasm contract-state smart $TOKEN_ADDRESS "$BALANCE" --node $RPC --output json
