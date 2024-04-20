@@ -8,7 +8,7 @@ use cosmwasm_std::{
 use cw0::*;
 use cw2::set_contract_version;
 use cw20::{Cw20ExecuteMsg, MinterResponse};
-use packages::factory::{ExecuteMsg, InstantiateMsg, PoolInfo, QueryMsg, MigrateMsg};
+use packages::factory::{ExecuteMsg, InstantiateMsg, MigrateMsg, PoolInfo, QueryMsg};
 use packages::pair::{ExecuteMsg as ExecutePairMsg, InstantiateMsg as InstantiatePairMsg};
 
 // version info for migration info
@@ -35,6 +35,9 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
     match msg {
         ExecuteMsg::CreateNewPair { asset_infos } => {
             execute::create_pair(deps, env, info, asset_infos)
+        }
+        ExecuteMsg::UpdatePairCodeId { pair_code_id } => {
+            execute::update_pair_code_id(deps, env, info, pair_code_id)
         }
     }
 }
@@ -106,6 +109,23 @@ pub mod execute {
             gas_limit: None,
             reply_on: ReplyOn::Success,
         }))
+    }
+
+    pub fn update_pair_code_id(
+        deps: DepsMut,
+        _env: Env,
+        info: MessageInfo,
+        pair_code_id: u64,
+    ) -> StdResult<Response> {
+        let owner = OWNER.load(deps.storage)?;
+        if info.sender != owner {
+            return Err(StdError::generic_err("Only owner"));
+        };
+
+        let mut factory_config = FACTORY_CONFIG.load(deps.storage)?;
+        factory_config.pair_code_id = pair_code_id;
+        FACTORY_CONFIG.save(deps.storage, &factory_config)?;
+        Ok(Response::new())
     }
 }
 

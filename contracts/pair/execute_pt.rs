@@ -1,7 +1,7 @@
 use crate::state::PAIR_INFO;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::{
-    to_binary, Decimal256, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult, Uint128,
+    to_binary, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult, Uint128,
 };
 use cw20::Cw20ExecuteMsg;
 use packages::pair::PairInfo;
@@ -181,10 +181,13 @@ pub mod execute {
         let fees = FEES.load(deps.storage)?;
         println!("fees inside swap {:?}", fees);
         let protocol_fees_amount = get_protocol_fees(amount_in, fees.protocol_fee_percent);
-        let lp_fees_amount = amount_in * (fees.lp_fee_percent) / (FEE_SCALING_FACTOR); 
+        let lp_fees_amount = amount_in * (fees.lp_fee_percent) / (FEE_SCALING_FACTOR);
         println!("Protocol fees amount {:?}", protocol_fees_amount);
         println!("Lp fees amount {:?}", lp_fees_amount);
-        println!("Token balances {:?} {:?} {:?}", token_balances[0], token_balances[1], amount_in);
+        println!(
+            "Token balances {:?} {:?} {:?}",
+            token_balances[0], token_balances[1], amount_in
+        );
 
         let amount_out = (token_balances[1] * (amount_in - protocol_fees_amount - lp_fees_amount))
             / (token_balances[0] + (amount_in - protocol_fees_amount - lp_fees_amount));
@@ -312,7 +315,21 @@ pub mod execute {
                     });
                     messages.push(asset_transfer);
                 }
-                TokenInfo::NativeToken { denom: _denom } => {}
+                TokenInfo::NativeToken { denom: _denom } => {
+                    let sent_fund = info
+                        .funds
+                        .get(0)
+                        .ok_or_else(|| StdError::generic_err("No funds sent"))
+                        .unwrap();
+                    println!("Sent fund {:?}", sent_fund);
+                    if sent_fund.clone().amount < asset.amount {
+                        return Err(StdError::generic_err("Insufficient funds sent"));
+                    };
+                    // TODO: Change this hardcoded denom and instead use must_pay from cw_utils
+                    if sent_fund.denom != "unibi".to_string() {
+                        return Err(StdError::generic_err("Invalid denomination"));
+                    };
+                }
             };
         }
 

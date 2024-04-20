@@ -21,6 +21,9 @@ pub enum ExecuteMsg {
         /// Asset infos
         asset_infos: [TokenInfo; 2],
     },
+    UpdatePairCodeId {
+        pair_code_id: u64,
+    },
 }
 
 #[cw_serde]
@@ -40,3 +43,4 @@ pub enum QueryMsg {
 
 #[cw_serde]
 pub struct MigrateMsg {}
+
